@@ -24,6 +24,43 @@ window.onload = () => {
     });
 };
 
+// ページのロード時にExcelファイルを直接読み込む
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const statusBar = document.getElementById('statusBar');
+    statusBar.innerHTML = '<span>🔄 Excelデータを読み込み中...</span>';
+
+    // リポジトリ内にあるExcelファイルをフェッチ
+    const response = await fetch('./touken_mst.xlsx');
+    if (!response.ok) {
+      throw new Error('Excelファイルの取得に失敗しました。');
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+
+    // 1番目のシートを取得
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+
+    // JSON形式に変換
+    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+    // 読み込んだデータを元にアプリを初期化する関数を呼び出す
+    initApp(jsonData);
+
+    statusBar.className = 'status-bar success';
+    statusBar.innerHTML = `<span>✨ データの読み込みが完了しました（全 ${jsonData.length} 件）</span>`;
+
+  } catch (error) {
+    console.error(error);
+    const statusBar = document.getElementById('statusBar');
+    statusBar.className = 'status-bar error';
+    statusBar.innerHTML = `<span>❌ エラー: ${error.message}</span>`;
+  }
+});
+
 function checkPassword() {
   // 設定したいパスワードをここに記述
   const correctPassword = "tothenorth"; 
