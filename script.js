@@ -3,27 +3,6 @@ let currentGroups = [];
 let currentSelectedGroupId = null;
 const HEIGHT_SCALE = 1.5;
 
-window.onload = () => {
-  fetch('/api/data')
-    .then(res => res.json())
-    .then(data => {
-      toukenData = data;
-      const statusBar = document.getElementById('statusBar');
-      statusBar.className = 'status-bar success';
-      statusBar.innerHTML = `✅ 自動読み込み完了: <strong>${toukenData.length}件</strong> の刀剣男士データを読み込みました。`;
-
-      document.getElementById('loadedCount').textContent = toukenData.length;
-      initFilters();
-      renderList();
-      updateSelectedCount();
-    })
-    .catch(err => {
-      const statusBar = document.getElementById('statusBar');
-      statusBar.className = 'status-bar error';
-      statusBar.innerHTML = `⚠️ エラー: ${err.message}`;
-    });
-};
-
 // ページのロード時にExcelファイルを直接読み込む
 window.addEventListener('DOMContentLoaded', async () => {
   try {
