@@ -22,6 +22,20 @@
       --accent-color: #e65100;
     }
 
+    /* ドラッグ中やグラフ要素での文字選択を禁止する */
+    .chart-item, 
+    .height-chart, 
+    .chart-wrapper, 
+    .group-card {
+      -webkit-user-select: none; /* Safari用 */
+      -moz-user-select: none;    /* Firefox用 */
+      -ms-user-select: none;     /* IE/Edge用 */
+      user-select: none;         /* 標準 */
+      
+      /* タッチ操作時の長押しによるメニュー表示を抑制 */
+      -webkit-touch-callout: none;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -367,13 +381,15 @@
       white-space: nowrap;
     }
 
+    /* 変更後 */
     .grid-lines {
       position: absolute;
       bottom: 41px;
       left: 0;
-      right: 0;
       top: 0;
+      height: calc(100% - 41px);
       pointer-events: none;
+      /* widthはJavaScriptからグラフの幅に合わせて動的に設定します */
     }
 
     .grid-line {
