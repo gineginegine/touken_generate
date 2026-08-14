@@ -23,16 +23,14 @@
     }
 
     /* ドラッグ中やグラフ要素での文字選択を禁止する */
-    .chart-item, 
-    .height-chart, 
-    .chart-wrapper, 
+    .chart-item,
+    .height-chart,
+    .chart-wrapper,
     .group-card {
-      -webkit-user-select: none; /* Safari用 */
-      -moz-user-select: none;    /* Firefox用 */
-      -ms-user-select: none;     /* IE/Edge用 */
-      user-select: none;         /* 標準 */
-      
-      /* タッチ操作時の長押しによるメニュー表示を抑制 */
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
       -webkit-touch-callout: none;
     }
 
@@ -89,30 +87,29 @@
     .container {
       max-width: 1200px;
       margin: 0 auto 20px auto;
-      display: flex !important; /* 強制的にフレキシブルな横並びにする */
-      flex-direction: row !important; /* 絶対に縦並びにさせない */
-      flex-wrap: nowrap !important; /* 幅が狭くても折り返さない */
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
       gap: 20px;
       align-items: flex-start;
       width: 100%;
     }
 
-    /* 左右のパネルがそれぞれ半分の幅を維持する */
-    .container > .card, 
-    .container > div {
+    .container>.card,
+    .container>div {
       flex: 1 1 50% !important;
       width: 50% !important;
       min-width: 0 !important;
       box-sizing: border-box;
     }
 
-    /* スマホなどの狭い画面（850px以下）のときだけ縦並びにする */
     @media (max-width: 850px) {
       .container {
         flex-direction: column !important;
       }
-      .container > .card, 
-      .container > div {
+
+      .container>.card,
+      .container>div {
         flex: 1 1 100% !important;
         width: 100% !important;
       }
@@ -370,8 +367,7 @@
       color: var(--primary-color);
     }
 
-    /* 身長グラフ部分・スクロールバー対応 */
-    /* 身長グラフのラッパーで、タッチ時のページスクロールと競合しないようにする */
+    /* === 身長グラフ部分の修正 === */
     .chart-wrapper {
       position: relative;
       background-color: #fafafa;
@@ -382,17 +378,15 @@
       padding: 0 45px;
       white-space: nowrap;
       -webkit-overflow-scrolling: touch;
-      /* スマホでのドラッグアンドドロップ時に画面全体のスクロールを防ぐ */
-      touch-action: pan-y; 
+      touch-action: pan-y;
     }
 
-    /* メモリ線（グリッド線）の親要素の修正 */
+    /* メモリ線が確実に高さを持ち、かつグラフの背景（z-index: 1）に配置されるようにする */
     .grid-lines {
       position: absolute;
       bottom: 35px;
       left: 0;
-      width: 100%;
-      height: 330px; /* グラフの高さに合わせて固定値を指定 */
+      height: 330px;
       pointer-events: none;
       z-index: 1;
     }
@@ -430,6 +424,7 @@
     .height-chart {
       position: relative;
       z-index: 2;
+      /* グラフ本体を手前にしてメモリ線と被っても操作できるようにする */
       display: inline-flex;
       align-items: flex-end;
       justify-content: flex-start;
@@ -514,44 +509,53 @@
 
     /* --- スマホ最適化設定 --- */
     @media (max-width: 600px) {
-      body { padding: 10px; }
-      
-      /* パネルの余白を詰める */
-      .panel { padding: 12px; }
+      body {
+        padding: 10px;
+      }
 
-      /* テーブルをスマホで見やすく（文字サイズ縮小＋横スクロール） */
+      .panel {
+        padding: 12px;
+      }
+
       #profileContainer {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
+
       #profileContainer table {
         font-size: 11px;
         min-width: 320px;
       }
-      #profileContainer th, #profileContainer td {
+
+      #profileContainer th,
+      #profileContainer td {
         padding: 6px 4px;
       }
 
-      /* グラフの表示エリアをスマホ向けに調整 */
       .chart-wrapper {
         padding: 0 10px;
       }
+
       .chart-item {
-        width: 50px; /* グラフ1本あたりの幅を狭くする */
+        width: 50px;
       }
+
       .height-bar {
         width: 30px !important;
         font-size: 10px;
       }
+
       .chart-label {
         font-size: 10px;
-        transform: rotate(-45deg); /* 文字が被らないように斜めにする */
+        transform: rotate(-45deg);
         margin-top: 15px;
         height: 30px;
       }
-      
-      /* ボタンを大きく押しやすく */
-      .btn-primary, .btn-secondary, .btn-img, .btn-pdf {
+
+      .btn-primary,
+      .btn-secondary,
+      .btn-img,
+      .btn-pdf {
         padding: 12px;
         font-size: 14px;
       }
@@ -561,13 +565,16 @@
 
 <body>
 
-  <!-- パスワード認証モーダル（背景を真っ白にして後ろを隠す） -->
-  <div id="authModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; justify-content: center; align-items: center;">
-    <div style="background: white; padding: 30px; border-radius: 8px; width: 320px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+  <div id="authModal"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; justify-content: center; align-items: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 8px; width: 320px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
       <h2 style="font-size: 18px; color: #2b5797; margin-bottom: 15px;">🔒 パスワード認証</h2>
       <p style="font-size: 13px; color: #666; margin-bottom: 12px;">利用するにはパスワードを入力してください。</p>
-      <input type="password" id="authPassword" placeholder="パスワードを入力" style="width: 100%; padding: 8px 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
-      <button onclick="checkPassword()" style="width: 100%; background: #2b5797; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">認証する</button>
+      <input type="password" id="authPassword" placeholder="パスワードを入力"
+        style="width: 100%; padding: 8px 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+      <button onclick="checkPassword()"
+        style="width: 100%; background: #2b5797; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">認証する</button>
       <p id="authError" style="color: #c62828; font-size: 12px; margin-top: 8px; display: none;">パスワードが間違っています。</p>
     </div>
   </div>
