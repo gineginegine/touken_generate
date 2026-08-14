@@ -371,17 +371,22 @@
     }
 
     /* 身長グラフ部分・スクロールバー対応 */
+    /* 身長グラフのラッパーで、タッチ時のページスクロールと競合しないようにする */
     .chart-wrapper {
       position: relative;
       background-color: #fafafa;
       border-bottom: 2px solid #bbb;
       border-radius: 6px;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
       padding: 0 45px;
       white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      /* スマホでのドラッグアンドドロップ時に画面全体のスクロールを防ぐ */
+      touch-action: pan-y; 
     }
 
-    /* 変更後 */
+    /* メモリ線（グリッド線）の親要素が確実に高さを持ち、表示されるようにする */
     .grid-lines {
       position: absolute;
       bottom: 41px;
@@ -389,13 +394,13 @@
       top: 0;
       height: calc(100% - 41px);
       pointer-events: none;
-      /* widthはJavaScriptからグラフの幅に合わせて動的に設定します */
+      z-index: 1;
     }
 
     .grid-line {
       position: absolute;
       left: 0;
-      right: 0;
+      width: 100%;
       border-top: 1px dashed #ccc;
       display: flex;
       justify-content: space-between;

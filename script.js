@@ -304,6 +304,9 @@ function addDragEvents(item) {
   let ghostEl = null;
   let initialLeft = 0;
 
+  // スマホで要素上のタッチ操作がページのスクロールに奪われないようにする
+  item.style.touchAction = 'none';
+
   item.onpointerdown = (e) => {
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
 
@@ -333,6 +336,7 @@ function addDragEvents(item) {
     item.setPointerCapture(e.pointerId);
     item.classList.add('dragging');
 
+    // ここでデフォルトのスクロールや選択挙動を完全にブロック
     e.preventDefault();
   };
 
