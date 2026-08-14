@@ -407,6 +407,7 @@ function addDragEvents(item) {
   };
 }
 
+// script.js 内の initCustomScrollbar 関数を以下のように修正・確認
 function initCustomScrollbar() {
   const wrapper = document.getElementById('chartWrapper');
   const chart = document.getElementById('chartContainer');
@@ -415,12 +416,14 @@ function initCustomScrollbar() {
 
   if (!wrapper || !chart || !container || !thumb) return;
 
+  // スマホ対応：タッチイベントでのスクロールを許可
+  wrapper.style.overflowX = 'auto';
+
   const contentWidth = chart.scrollWidth;
   const visibleWidth = wrapper.clientWidth;
 
   if (contentWidth <= visibleWidth) {
     container.style.display = 'none';
-    chart.style.transform = 'translateX(0px)';
     return;
   }
 

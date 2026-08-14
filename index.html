@@ -490,6 +490,51 @@
       font-size: 14px;
       width: 100%;
     }
+
+    /* --- スマホ最適化設定 --- */
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      
+      /* パネルの余白を詰める */
+      .panel { padding: 12px; }
+
+      /* テーブルをスマホで見やすく（文字サイズ縮小＋横スクロール） */
+      #profileContainer {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      #profileContainer table {
+        font-size: 11px;
+        min-width: 320px;
+      }
+      #profileContainer th, #profileContainer td {
+        padding: 6px 4px;
+      }
+
+      /* グラフの表示エリアをスマホ向けに調整 */
+      .chart-wrapper {
+        padding: 0 10px;
+      }
+      .chart-item {
+        width: 50px; /* グラフ1本あたりの幅を狭くする */
+      }
+      .height-bar {
+        width: 30px !important;
+        font-size: 10px;
+      }
+      .chart-label {
+        font-size: 10px;
+        transform: rotate(-45deg); /* 文字が被らないように斜めにする */
+        margin-top: 15px;
+        height: 30px;
+      }
+      
+      /* ボタンを大きく押しやすく */
+      .btn-primary, .btn-secondary, .btn-img, .btn-pdf {
+        padding: 12px;
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 
