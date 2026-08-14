@@ -61,6 +61,19 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Excelの読み込みが成功したときに呼ばれるメイン関数
+function initApp(data) {
+  // グローバル変数などにデータを保存しておく場合
+  window.toukenData = data;
+
+  // 例：読み込んだ件数を表示する、フィルターの選択肢を作るなどの初期化処理をここに書く
+  console.log("データ読み込み成功:", data);
+
+  // 画面のリストを構築する処理（すでにある関数をここで呼び出す）
+  // renderToukenList(data);
+  // initFilters(data);
+}
+
 function checkPassword() {
   // 設定したいパスワードをここに記述
   const correctPassword = "tothenorth"; 
