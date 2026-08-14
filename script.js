@@ -489,7 +489,9 @@ function initCustomScrollbar() {
 
 function renderGridLines() {
   const gridContainer = document.getElementById('gridLines');
-  if (!gridContainer) return;
+  const chartContainer = document.getElementById('chartContainer');
+  if (!gridContainer || !chartContainer) return;
+
   gridContainer.innerHTML = '';
 
   for (let heightCm = 0; heightCm <= 220; heightCm += 20) {
@@ -503,6 +505,10 @@ function renderGridLines() {
     `;
     gridContainer.appendChild(line);
   }
+
+  // グラフ（#chartContainer）の全体の横幅に合わせてグリッド線の幅を決定する
+  const totalWidth = chartContainer.scrollWidth;
+  gridContainer.style.width = `${totalWidth}px`;
 }
 
 async function exportDetailImage() {
