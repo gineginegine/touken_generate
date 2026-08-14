@@ -5,9 +5,15 @@ const HEIGHT_SCALE = 1.5;
 
 // ページのロード時にExcelファイルを直接読み込む
 window.addEventListener('DOMContentLoaded', async () => {
+  // パスワード認証済みの場合はモーダルを非表示にする
+  if (sessionStorage.getItem('isAuthorized') === 'true') {
+    const authModal = document.getElementById('authModal');
+    if (authModal) authModal.style.display = 'none';
+  }
+
   try {
     const statusBar = document.getElementById('statusBar');
-    statusBar.innerHTML = '<span>🔄 Excelデータを読み込み中...</span>';
+    if (statusBar) statusBar.innerHTML = '<span>🔄 Excelデータを読み込み中...</span>';
 
     // リポジトリ内にあるExcelファイルをフェッチ
     const response = await fetch('./touken_mst.xlsx');
@@ -26,47 +32,46 @@ window.addEventListener('DOMContentLoaded', async () => {
     // JSON形式に変換
     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-    // 読み込んだデータを元にアプリを初期化する関数を呼び出す
-    initApp(jsonData);
+    // データをグローバル変数に格納して初期化を実行
+    toukenData = jsonData;
+    window.toukenData = jsonData;
 
-    statusBar.className = 'status-bar success';
-    statusBar.innerHTML = `<span>✨ データの読み込みが完了しました（全 ${jsonData.length} 件）</span>`;
+    const loadedCountEl = document.getElementById('loadedCount');
+    if (loadedCountEl) loadedCountEl.textContent = toukenData.length;
+
+    initFilters();
+    renderList();
+    updateSelectedCount();
+
+    if (statusBar) {
+      statusBar.className = 'status-bar success';
+      statusBar.innerHTML = `<span>✨ データの読み込みが完了しました（全 ${jsonData.length} 件）</span>`;
+    }
 
   } catch (error) {
     console.error(error);
     const statusBar = document.getElementById('statusBar');
-    statusBar.className = 'status-bar error';
-    statusBar.innerHTML = `<span>❌ エラー: ${error.message}</span>`;
+    if (statusBar) {
+      statusBar.className = 'status-bar error';
+      statusBar.innerHTML = `<span>❌ エラー: ${error.message}</span>`;
+    }
   }
 });
 
-// Excelの読み込みが成功したときに呼ばれるメイン関数
-function initApp(data) {
-  // グローバル変数などにデータを保存しておく場合
-  window.toukenData = data;
-
-  // 例：読み込んだ件数を表示する、フィルターの選択肢を作るなどの初期化処理をここに書く
-  console.log("データ読み込み成功:", data);
-
-  // 画面のリストを構築する処理（すでにある関数をここで呼び出す）
-  // renderToukenList(data);
-  // initFilters(data);
-}
-
 function checkPassword() {
-  // 設定したいパスワードをここに記述
-  const correctPassword = "tothenorth"; 
-  
-  const inputVal = document.getElementById('authPassword').value;
-  const errorEl = document.getElementById('authError');
+  const correctPassword = "tothenorth";
 
-  if (inputVal === correctPassword) {
-    // 認証成功したらモーダルを非表示にする
-    document.getElementById('authModal').style.display = 'none';
-    // セッションに保存して、画面リロードしても再入力しなくてよくする場合（任意）
+  const inputEl = document.getElementById('authPassword');
+  const errorEl = document.getElementById('authError');
+  const modalEl = document.getElementById('authModal');
+
+  if (!inputEl || !modalEl) return;
+
+  if (inputEl.value === correctPassword) {
+    modalEl.style.display = 'none';
     sessionStorage.setItem('isAuthorized', 'true');
   } else {
-    errorEl.style.display = 'block';
+    if (errorEl) errorEl.style.display = 'block';
   }
 }
 
@@ -82,15 +87,23 @@ function initFilters() {
   const schools = [...new Set(toukenData.map(d => d.school))].filter(Boolean);
 
   const typeSelect = document.getElementById('filterType');
-  types.forEach(t => typeSelect.add(new Option(t, t)));
+  if (typeSelect) {
+    typeSelect.innerHTML = '<option value="">すべて</option>';
+    types.forEach(t => typeSelect.add(new Option(t, t)));
+  }
 
   const schoolSelect = document.getElementById('filterSchool');
-  schools.forEach(s => schoolSelect.add(new Option(s, s)));
+  if (schoolSelect) {
+    schoolSelect.innerHTML = '<option value="">すべて</option>';
+    schools.forEach(s => schoolSelect.add(new Option(s, s)));
+  }
 }
 
 function renderList() {
   const container = document.getElementById('toukenList');
+  if (!container) return;
   container.innerHTML = '';
+
   toukenData.forEach(item => {
     const div = document.createElement('div');
     div.className = 'touken-item';
@@ -111,19 +124,17 @@ function renderList() {
 function applyFilter() {
   const selectedType = document.getElementById('filterType').value;
   const selectedSchool = document.getElementById('filterSchool').value;
-  // ★ 追加：検索キーワードを取得して小文字に変換（大文字小文字を区別せず検索するため）
-  const keyword = document.getElementById('filterKeyword').value.trim().toLowerCase();
+  const keywordInput = document.getElementById('filterKeyword');
+  const keyword = keywordInput ? keywordInput.value.trim().toLowerCase() : '';
 
   document.querySelectorAll('.touken-item').forEach(item => {
     const type = item.dataset.type || '';
     const school = item.dataset.school || '';
-    // HTML要素からキャラクター名を取得
     const nameEl = item.querySelector('.touken-name');
     const name = nameEl ? nameEl.textContent.toLowerCase() : '';
 
     const matchType = !selectedType || type === selectedType;
     const matchSchool = !selectedSchool || school === selectedSchool;
-    // ★ 追加：名前の部分一致判定
     const matchKeyword = !keyword || name.includes(keyword);
 
     if (matchType && matchSchool && matchKeyword) {
@@ -141,7 +152,8 @@ function toggleSelectVisible(selectState) {
 
 function updateSelectedCount() {
   const count = document.querySelectorAll('.touken-item input[type="checkbox"]:checked').length;
-  document.getElementById('selectedCount').textContent = count;
+  const countEl = document.getElementById('selectedCount');
+  if (countEl) countEl.textContent = count;
 }
 
 function generateGroups() {
@@ -156,8 +168,11 @@ function generateGroups() {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  const groupSize = parseInt(document.getElementById('groupSize').value) || 6;
+  const groupSizeEl = document.getElementById('groupSize');
+  const groupSize = groupSizeEl ? parseInt(groupSizeEl.value) || 6 : 6;
   const resultContainer = document.getElementById('resultContainer');
+  if (!resultContainer) return;
+
   resultContainer.innerHTML = '';
   currentGroups = [];
 
@@ -201,9 +216,9 @@ function selectGroup(groupIndex) {
   const targetGroup = currentGroups.find(g => Number(g.id) === Number(groupIndex));
   if (!targetGroup) return;
 
-  document.getElementById('detailTitle').textContent = `3. 部隊 ${groupIndex} の詳細プロフィール`;
+  const detailTitle = document.getElementById('detailTitle');
+  if (detailTitle) detailTitle.textContent = `3. 部隊 ${groupIndex} の詳細プロフィール`;
 
-  // ★ 変更：プロフィールテーブル用には「刀帳番号（id）」の昇順でソートした配列を作る
   const sortedMembers = [...targetGroup.members].sort((a, b) => {
     return (Number(a.id) || 0) - (Number(b.id) || 0);
   });
@@ -221,9 +236,7 @@ function selectGroup(groupIndex) {
       </thead>
       <tbody>
   `;
-  // ★ ここでソート済みの配列（sortedMembers）を使用する
   sortedMembers.forEach(m => {
-    // 刀帳番号が 0 の場合もきちんと表示されるように修正
     const displayId = (m.id !== undefined && m.id !== null && m.id !== '') ? m.id : '-';
 
     tableHtml += `
@@ -237,13 +250,15 @@ function selectGroup(groupIndex) {
     `;
   });
   tableHtml += `</tbody></table>`;
-  document.getElementById('profileContainer').innerHTML = tableHtml;
+
+  const profileContainer = document.getElementById('profileContainer');
+  if (profileContainer) profileContainer.innerHTML = tableHtml;
 
   const chartContainer = document.getElementById('chartContainer');
+  if (!chartContainer) return;
   chartContainer.innerHTML = '';
   renderGridLines();
 
-  // グラフ側の描画は、ユーザーが並び替えた順番（targetGroup.members）をそのまま維持
   targetGroup.members.forEach(m => {
     const numHeight = m.height ? parseFloat(String(m.height).replace(/[^0-9.]/g, '')) : NaN;
     const barHeight = !isNaN(numHeight) ? numHeight * HEIGHT_SCALE : 60;
@@ -262,7 +277,6 @@ function selectGroup(groupIndex) {
     chartContainer.appendChild(chartItem);
   });
 
-  // スクロールバーの初期化・更新
   initCustomScrollbar();
 }
 
@@ -284,9 +298,6 @@ function saveCurrentChartOrder() {
   if (newOrderMembers.length > 0) targetGroup.members = newOrderMembers;
 }
 
-let draggedItem = null;
-
-// --- ポインター位置とのズレを防ぐ自由並び替え処理 ---
 function addDragEvents(item) {
   let isPointerDragging = false;
   let startX = 0;
@@ -303,7 +314,6 @@ function addDragEvents(item) {
     const containerRect = container.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
 
-    // 元の位置を保持するためのゴースト（空きスペース）を作成
     ghostEl = document.createElement('div');
     ghostEl.style.width = `${item.offsetWidth}px`;
     ghostEl.style.height = `${item.offsetHeight}px`;
@@ -311,7 +321,6 @@ function addDragEvents(item) {
     ghostEl.style.visibility = 'hidden';
     container.insertBefore(ghostEl, item);
 
-    // アイテムを絶対配置にしてコンテナ基準の初期位置を保存
     initialLeft = itemRect.left - containerRect.left;
     const initialTop = itemRect.top - containerRect.top;
 
@@ -319,7 +328,7 @@ function addDragEvents(item) {
     item.style.left = `${initialLeft}px`;
     item.style.top = `${initialTop}px`;
     item.style.zIndex = '1000';
-    item.style.pointerEvents = 'none'; // 判定の邪魔をさせない
+    item.style.pointerEvents = 'none';
 
     item.setPointerCapture(e.pointerId);
     item.classList.add('dragging');
@@ -331,18 +340,14 @@ function addDragEvents(item) {
     if (!isPointerDragging) return;
 
     const container = document.getElementById('chartContainer');
-    
-    // カーソルの移動量（dx）を、そのまま初期位置に足すことでズレを完全になくす
     const dx = e.clientX - startX;
     item.style.left = `${initialLeft + dx}px`;
 
-    // 挿入位置（ゴーストの位置）の判定
     const items = Array.from(container.querySelectorAll('.chart-item:not(.dragging)'));
     let targetItem = null;
 
     for (const other of items) {
       const box = other.getBoundingClientRect();
-      // カーソルのX座標が、他のアイテムの中心より左にあるか
       if (e.clientX < box.left + box.width / 2) {
         targetItem = other;
         break;
@@ -362,7 +367,6 @@ function addDragEvents(item) {
 
     const container = document.getElementById('chartContainer');
 
-    // スタイルをリセット
     item.style.position = '';
     item.style.left = '';
     item.style.top = '';
@@ -370,14 +374,13 @@ function addDragEvents(item) {
     item.style.pointerEvents = '';
     item.classList.remove('dragging');
 
-    // ゴーストの位置にアイテムを定着させる
     if (ghostEl && ghostEl.parentNode) {
       container.insertBefore(item, ghostEl);
       ghostEl.remove();
       ghostEl = null;
     }
 
-    try { item.releasePointerCapture(e.pointerId); } catch (err) {}
+    try { item.releasePointerCapture(e.pointerId); } catch (err) { }
 
     saveCurrentChartOrder();
   };
@@ -400,11 +403,10 @@ function addDragEvents(item) {
       ghostEl = null;
     }
 
-    try { item.releasePointerCapture(e.pointerId); } catch (err) {}
+    try { item.releasePointerCapture(e.pointerId); } catch (err) { }
   };
 }
 
-// --- 横スクロールバー連動制御 ---
 function initCustomScrollbar() {
   const wrapper = document.getElementById('chartWrapper');
   const chart = document.getElementById('chartContainer');
@@ -425,7 +427,7 @@ function initCustomScrollbar() {
   container.style.display = 'block';
   let scrollX = 0;
   const maxScroll = contentWidth - visibleWidth;
-  
+
   const thumbWidth = Math.max(40, (visibleWidth / contentWidth) * visibleWidth);
   thumb.style.width = `${thumbWidth}px`;
   const maxThumbMove = visibleWidth - thumbWidth;
@@ -433,7 +435,7 @@ function initCustomScrollbar() {
   function updateScrollPosition(newScrollX) {
     scrollX = Math.max(0, Math.min(newScrollX, maxScroll));
     const thumbX = (scrollX / maxScroll) * maxThumbMove;
-    
+
     thumb.style.left = `${thumbX}px`;
     chart.style.transform = `translateX(-${scrollX}px)`;
   }
@@ -462,7 +464,7 @@ function initCustomScrollbar() {
 
   thumb.onpointerup = (e) => {
     isDraggingThumb = false;
-    try { thumb.releasePointerCapture(e.pointerId); } catch(err) {}
+    try { thumb.releasePointerCapture(e.pointerId); } catch (err) { }
   };
 
   container.onclick = (e) => {
@@ -507,6 +509,7 @@ async function exportDetailImage() {
   }
 
   const imgBtn = document.getElementById('imgBtn');
+  if (!imgBtn) return;
   const originalText = imgBtn.textContent;
   imgBtn.disabled = true;
   imgBtn.textContent = '⌛ 画像作成中...';
@@ -548,6 +551,7 @@ async function exportNativePDF() {
   }
 
   const pdfBtn = document.getElementById('pdfBtn');
+  if (!pdfBtn) return;
   pdfBtn.disabled = true;
   pdfBtn.textContent = '⌛ PDF生成中...';
 
