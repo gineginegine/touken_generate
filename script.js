@@ -304,7 +304,7 @@ function addDragEvents(item) {
   let ghostEl = null;
   let initialLeft = 0;
 
-  // スマホで要素上のタッチ操作がページのスクロールに奪われないようにする
+  // スマホのデフォルトジェスチャーを完全に無効化
   item.style.touchAction = 'none';
 
   item.onpointerdown = (e) => {
@@ -333,15 +333,17 @@ function addDragEvents(item) {
     item.style.zIndex = '1000';
     item.style.pointerEvents = 'none';
 
-    item.setPointerCapture(e.pointerId);
-    item.classList.add('dragging');
+    try {
+      item.setPointerCapture(e.pointerId);
+    } catch (err) { }
 
-    // ここでデフォルトのスクロールや選択挙動を完全にブロック
+    item.classList.add('dragging');
     e.preventDefault();
   };
 
   item.onpointermove = (e) => {
     if (!isPointerDragging) return;
+    e.preventDefault(); // スマホでのスクロール干渉を防ぐ
 
     const container = document.getElementById('chartContainer');
     const dx = e.clientX - startX;
@@ -365,7 +367,7 @@ function addDragEvents(item) {
     }
   };
 
-  item.onpointerup = (e) => {
+  const endDrag = (e) => {
     if (!isPointerDragging) return;
     isPointerDragging = false;
 
@@ -384,31 +386,15 @@ function addDragEvents(item) {
       ghostEl = null;
     }
 
-    try { item.releasePointerCapture(e.pointerId); } catch (err) { }
+    try {
+      item.releasePointerCapture(e.pointerId);
+    } catch (err) { }
 
     saveCurrentChartOrder();
   };
 
-  item.onpointercancel = (e) => {
-    if (!isPointerDragging) return;
-    isPointerDragging = false;
-
-    const container = document.getElementById('chartContainer');
-    item.style.position = '';
-    item.style.left = '';
-    item.style.top = '';
-    item.style.zIndex = '';
-    item.style.pointerEvents = '';
-    item.classList.remove('dragging');
-
-    if (ghostEl && ghostEl.parentNode) {
-      container.insertBefore(item, ghostEl);
-      ghostEl.remove();
-      ghostEl = null;
-    }
-
-    try { item.releasePointerCapture(e.pointerId); } catch (err) { }
-  };
+  item.onpointerup = endDrag;
+  item.onpointercancel = endDrag;
 }
 
 // script.js 内の initCustomScrollbar 関数を以下のように修正・確認

@@ -386,13 +386,13 @@
       touch-action: pan-y; 
     }
 
-    /* メモリ線（グリッド線）の親要素が確実に高さを持ち、表示されるようにする */
+    /* メモリ線（グリッド線）の親要素の修正 */
     .grid-lines {
       position: absolute;
-      bottom: 41px;
+      bottom: 35px;
       left: 0;
-      top: 0;
-      height: calc(100% - 41px);
+      width: 100%;
+      height: 330px; /* グラフの高さに合わせて固定値を指定 */
       pointer-events: none;
       z-index: 1;
     }
