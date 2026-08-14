@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>刀剣男士 チームランダム編成ツール</title>
+
+  <!-- 必須ライブラリ (画像化 & PDF出力用) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #2b5797;
+      --primary-hover: #1b365d;
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --border-color: #e0e0e0;
+      --accent-color: #e65100;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--primary-color);
+    }
+
+    .header h1 {
+      color: var(--primary-color);
+      font-size: 24px;
+    }
+
+    .status-bar {
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      background-color: #e3f2fd;
+      color: #0d47a1;
+      border: 1px solid #bbdefb;
+    }
+
+    .status-bar.error {
+      background-color: #ffebee;
+      color: #c62828;
+      border-color: #ffcdd2;
+    }
+
+    .status-bar.success {
+      background-color: #e8f5e9;
+      color: #1b5e20;
+      border-color: #c8e6c9;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
+      display: flex !important; /* 強制的にフレキシブルな横並びにする */
+      flex-direction: row !important; /* 絶対に縦並びにさせない */
+      flex-wrap: nowrap !important; /* 幅が狭くても折り返さない */
+      gap: 20px;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    /* 左右のパネルがそれぞれ半分の幅を維持する */
+    .container > .card, 
+    .container > div {
+      flex: 1 1 50% !important;
+      width: 50% !important;
+      min-width: 0 !important;
+      box-sizing: border-box;
+    }
+
+    /* スマホなどの狭い画面（850px以下）のときだけ縦並びにする */
+    @media (max-width: 850px) {
+      .container {
+        flex-direction: column !important;
+      }
+      .container > .card, 
+      .container > div {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+      }
+    }
+
+    .detail-section {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--border-color);
+      width: 100%;
+    }
+
+    .panel h2 {
+      font-size: 18px;
+      color: var(--primary-color);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #eef2f7;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sub-title {
+      font-size: 16px;
+      color: var(--primary-color);
+      margin: 24px 0 12px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .count-badge {
+      font-size: 13px;
+      background-color: #eef2f7;
+      color: var(--primary-color);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .filter-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-item label {
+      font-size: 13px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    select,
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background-color: #fff;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: #444;
+      border: 1px solid #ccc;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e0e0e0;
+    }
+
+    .btn-pdf {
+      background-color: #2e7d32;
+      color: white;
+    }
+
+    .btn-pdf:hover {
+      background-color: #1b5e20;
+    }
+
+    .btn-img {
+      background-color: #0288d1;
+      color: white;
+    }
+
+    .btn-img:hover {
+      background-color: #01579b;
+    }
+
+    .list-box {
+      height: 380px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+
+    .touken-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+
+    .touken-item.hidden {
+      display: none;
+    }
+
+    .touken-item label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .touken-name {
+      font-weight: bold;
+      font-size: 14px;
+      flex-grow: 1;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .tag-type {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .tag-school {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+
+    .generator-settings {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+
+    .result-container {
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .group-card {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--primary-color);
+      padding: 14px;
+      margin-bottom: 10px;
+      border-radius: 0 6px 6px 0;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .group-card:hover {
+      background-color: #f0f7ff;
+      transform: translateX(4px);
+    }
+
+    .group-card.active {
+      border-left-color: #e65100;
+      background-color: #fff8e1;
+    }
+
+    .group-title {
+      font-weight: bold;
+      font-size: 15px;
+      color: var(--primary-hover);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .group-members {
+      font-size: 14px;
+      color: #444;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid #eee;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      color: var(--primary-color);
+    }
+
+    /* 身長グラフ部分・スクロールバー対応 */
+    .chart-wrapper {
+      position: relative;
+      background-color: #fafafa;
+      border-bottom: 2px solid #bbb;
+      border-radius: 6px;
+      overflow: hidden;
+      padding: 0 45px;
+      white-space: nowrap;
+    }
+
+    .grid-lines {
+      position: absolute;
+      bottom: 41px;
+      left: 0;
+      right: 0;
+      top: 0;
+      pointer-events: none;
+    }
+
+    .grid-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 1px dashed #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 0;
+    }
+
+    .grid-label-left,
+    .grid-label-right {
+      position: absolute;
+      font-size: 11px;
+      color: #777;
+      font-weight: bold;
+      background-color: #fafafa;
+      padding: 0 4px;
+      transform: translateY(-50%);
+    }
+
+    .grid-label-left {
+      left: 5px;
+    }
+
+    .grid-label-right {
+      right: 5px;
+    }
+
+    .height-chart {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      gap: 15px;
+      height: 380px;
+      padding: 20px 5px 15px 5px;
+      transition: transform 0.05s ease-out;
+    }
+
+    /* カスタムスクロールバー */
+    .chart-scrollbar-container {
+      width: 100%;
+      height: 16px;
+      background: #e0e0e0;
+      border-radius: 8px;
+      margin-top: 8px;
+      position: relative;
+      cursor: pointer;
+      display: none;
+    }
+
+    .chart-scrollbar-thumb {
+      position: absolute;
+      top: 2px;
+      height: 12px;
+      background: var(--primary-color);
+      border-radius: 6px;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .chart-scrollbar-thumb:active {
+      cursor: grabbing;
+    }
+
+    .chart-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 80px;
+      flex-shrink: 0;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .chart-item.dragging {
+      opacity: 0.4;
+    }
+
+    .height-bar {
+      width: 36px;
+      background: linear-gradient(180deg, #3498db, #2b5797);
+      border-radius: 4px 4px 0 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding-top: 6px;
+    }
+
+    .chart-label {
+      margin-top: 8px;
+      font-size: 12px;
+      text-align: center;
+      font-weight: bold;
+      color: #333;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .placeholder-text {
+      color: #888;
+      text-align: center;
+      padding: 60px 0;
+      font-size: 14px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- パスワード認証モーダル -->
+  <div id="authModal"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; justify-content: center; align-items: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 8px; width: 320px; text-align: box; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+      <h2 style="font-size: 18px; color: #2b5797; margin-bottom: 15px;">🔒 パスワード認証</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 12px;">利用するにはパスワードを入力してください。</p>
+      <input type="password" id="authPassword" placeholder="パスワードを入力"
+        style="width: 100%; padding: 8px 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+      <button onclick="checkPassword()"
+        style="width: 100%; background: #2b5797; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">認証する</button>
+      <p id="authError" style="color: #c62828; font-size: 12px; margin-top: 8px; display: none;">パスワードが間違っています。</p>
+    </div>
+  </div>
+  
+  <div class="header">
+    <h1>⚔️ 刀剣男士 チームランダム編成ツール</h1>
+  </div>
+
+  <div id="statusBar" class="status-bar">
+    <span>🔄 サーバーからExcelデータを自動読み込み中...</span>
+  </div>
+
+  <div class="container">
+    <div class="panel">
+      <h2>
+        1. メンバー選択・絞り込み
+        <span class="count-badge">選択: <span id="selectedCount">0</span> / <span id="loadedCount">0</span>件</span>
+      </h2>
+
+      <div class="filter-group">
+        <div class="filter-item">
+          <label>刀種</label>
+          <select id="filterType" onchange="applyFilter()">
+            <option value="">すべて</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>刀派</label>
+          <select id="filterSchool" onchange="applyFilter()">
+            <option value="">すべて</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-item" style="margin-bottom: 16px;">
+        <label>名前検索（部分一致）</label>
+        <input type="text" id="filterKeyword" placeholder="例: 三日月、清光 など" oninput="applyFilter()">
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="toggleSelectVisible(true)">表示中をすべて選択</button>
+        <button class="btn-secondary" onclick="toggleSelectVisible(false)">表示中をすべて解除</button>
+      </div>
+
+      <div id="toukenList" class="list-box">
+        <p class="placeholder-text">データを読み込んでいます...</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>
+        2. ランダム組み合わせ作成
+        <button class="btn-pdf" id="pdfBtn" onclick="exportNativePDF()" style="font-size: 12px; padding: 4px 10px;">📄
+          全チームPDF保存</button>
+      </h2>
+
+      <div class="generator-settings">
+        <label style="font-weight: bold; font-size: 14px; white-space: nowrap;">1グループの人数：</label>
+        <input type="number" id="groupSize" value="6" min="1" max="10" style="width: 80px;">
+        <button class="btn-primary" onclick="generateGroups()" style="width: 100%;">チームを生成！</button>
+      </div>
+
+      <div id="resultContainer" class="result-container">
+        <p class="placeholder-text">「チームを生成！」を押すとここに結果が表示されます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-section" id="exportAreaDetail">
+    <div class="panel">
+      <h2>
+        <span id="detailTitle">3. グループ詳細プロフィール</span>
+        <button class="btn-img" id="imgBtn" onclick="exportDetailImage()" style="font-size: 12px; padding: 4px 10px;">📷
+          画像として保存</button>
+      </h2>
+
+      <div id="profileContainer">
+        <p class="placeholder-text">生成されたグループをクリックすると、メンバーのプロフィールが表示されます。</p>
+      </div>
+
+      <h3 class="sub-title">📊 身長比較図 <span
+          style="font-size: 12px; font-weight: normal; color: #666; margin-left: 8px;">(ドラッグで並び替え可能 /
+          下部のスクロールバーで移動)</span></h3>
+
+      <div class="chart-wrapper" id="chartWrapper">
+        <div id="gridLines" class="grid-lines"></div>
+        <div id="chartContainer" class="height-chart">
+          <p class="placeholder-text">グループを選択すると身長グラフが表示されます。</p>
+        </div>
+      </div>
+
+      <!-- 横スクロール用バー -->
+      <div class="chart-scrollbar-container" id="scrollbarContainer">
+        <div class="chart-scrollbar-thumb" id="scrollbarThumb"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
