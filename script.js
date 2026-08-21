@@ -5,10 +5,10 @@ const HEIGHT_SCALE = 1.5;
 
 // ページのロード時にExcelファイルを直接読み込む
 window.addEventListener('DOMContentLoaded', async () => {
-  // パスワード認証済みの場合はモーダルを非表示にする
-  if (sessionStorage.getItem('isAuthorized') === 'true') {
-    const authModal = document.getElementById('authModal');
-    if (authModal) authModal.style.display = 'none';
+  // 未認証の場合はホーム画面へリダイレクト
+  if (sessionStorage.getItem('isAuthorized') !== 'true') {
+    window.location.href = 'home.html';
+    return;
   }
 
   try {
@@ -55,30 +55,6 @@ window.addEventListener('DOMContentLoaded', async () => {
       statusBar.className = 'status-bar error';
       statusBar.innerHTML = `<span>❌ エラー: ${error.message}</span>`;
     }
-  }
-});
-
-function checkPassword() {
-  const correctPassword = "tothenorth";
-
-  const inputEl = document.getElementById('authPassword');
-  const errorEl = document.getElementById('authError');
-  const modalEl = document.getElementById('authModal');
-
-  if (!inputEl || !modalEl) return;
-
-  if (inputEl.value === correctPassword) {
-    modalEl.style.display = 'none';
-    sessionStorage.setItem('isAuthorized', 'true');
-  } else {
-    if (errorEl) errorEl.style.display = 'block';
-  }
-}
-
-// ページ読み込み時にすでに認証済みかチェックしたい場合
-window.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem('isAuthorized') === 'true') {
-    document.getElementById('authModal').style.display = 'none';
   }
 });
 
@@ -304,7 +280,6 @@ function addDragEvents(item) {
   let ghostEl = null;
   let initialLeft = 0;
 
-  // スマホのデフォルトジェスチャーを完全に無効化
   item.style.touchAction = 'none';
 
   item.onpointerdown = (e) => {
@@ -343,7 +318,7 @@ function addDragEvents(item) {
 
   item.onpointermove = (e) => {
     if (!isPointerDragging) return;
-    e.preventDefault(); // スマホでのスクロール干渉を防ぐ
+    e.preventDefault();
 
     const container = document.getElementById('chartContainer');
     const dx = e.clientX - startX;
@@ -397,7 +372,6 @@ function addDragEvents(item) {
   item.onpointercancel = endDrag;
 }
 
-// script.js 内の initCustomScrollbar 関数を以下のように修正・確認
 function initCustomScrollbar() {
   const wrapper = document.getElementById('chartWrapper');
   const chart = document.getElementById('chartContainer');
@@ -406,7 +380,6 @@ function initCustomScrollbar() {
 
   if (!wrapper || !chart || !container || !thumb) return;
 
-  // スマホ対応：タッチイベントでのスクロールを許可
   wrapper.style.overflowX = 'auto';
 
   const contentWidth = chart.scrollWidth;
@@ -496,7 +469,6 @@ function renderGridLines() {
     gridContainer.appendChild(line);
   }
 
-  // グラフ（#chartContainer）の全体の横幅に合わせてグリッド線の幅を決定する
   const totalWidth = chartContainer.scrollWidth;
   gridContainer.style.width = `${totalWidth}px`;
 }
@@ -572,7 +544,7 @@ async function exportNativePDF() {
     const titleEl = document.createElement('div');
     titleEl.innerHTML = `
       <h1 style="font-size:20px; color:#2b5797; border-bottom:2px solid #2b5797; padding-bottom:8px; margin-bottom:15px; font-family:sans-serif;">
-        ⚔️ 刀剣男士 チーム編成・全グループ詳細＆身長比較レポート
+        ⚔️ 刀剣男士 全グループ詳細一覧
       </h1>
     `;
     tempContainer.appendChild(titleEl);
@@ -635,11 +607,6 @@ async function exportNativePDF() {
           </thead>
           <tbody>${tableRows}</tbody>
         </table>
-        
-        <h3 style="font-size:14px; color:#2b5797; margin-bottom:8px;">📊 身長比較図</h3>
-        <div style="background:#fafafa; border:1px solid #ccc; height:220px; display:flex; align-items:flex-end; justify-content:space-around; padding:15px 15px 10px 15px; box-sizing:border-box; overflow:hidden;">
-          ${barsHtml}
-        </div>
       `;
 
       tempContainer.appendChild(groupEl);
@@ -656,7 +623,7 @@ async function exportNativePDF() {
     }
 
     tempContainer.remove();
-    doc.save('刀剣男士_全チームレポート.pdf');
+    doc.save('刀剣男士_全グループ一覧.pdf');
   } catch (err) {
     console.error(err);
     alert("PDF生成エラー: " + err.message);

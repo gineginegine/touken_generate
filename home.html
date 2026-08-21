@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>刀剣乱舞 審神者便利ツールポータル</title>
+  <style>
+    :root {
+      --primary-color: #4a3b52;
+      --accent-color: #8a3b5c;
+      --bg-color: #f7f5f8;
+      --card-bg: #ffffff;
+      --border-color: #e0d8e3;
+      --text-sub: #666666;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", MeiYo, sans-serif;
+      background-color: var(--bg-color);
+      color: #333;
+      margin: 0;
+      padding: 40px 20px;
+      min-height: 100vh;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--primary-color);
+      margin: 0 0 10px 0;
+      letter-spacing: 0.05em;
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      margin: 0;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .tool-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      padding: 28px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background-color: var(--primary-color);
+      transition: background-color 0.2s ease;
+    }
+
+    .tool-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: var(--accent-color);
+    }
+
+    .tool-card:hover::before {
+      background-color: var(--accent-color);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-description {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .card-btn {
+      align-self: flex-end;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-btn::after {
+      content: "➔";
+      font-size: 0.8rem;
+      transition: transform 0.2s ease;
+    }
+
+    .tool-card:hover .card-btn::after {
+      transform: translateX(4px);
+    }
+
+    footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- パスワード認証モーダル -->
+  <div id="authModal"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; justify-content: center; align-items: center;">
+    <div
+      style="background: white; padding: 30px; border-radius: 8px; width: 320px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0d8e3;">
+      <h2 style="font-size: 18px; color: #4a3b52; margin-bottom: 15px;">🔒 パスワード認証</h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 12px;">ポータルを利用するにはパスワードを入力してください。</p>
+      <input type="password" id="authPassword" placeholder="パスワードを入力"
+        style="width: 100%; padding: 8px 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+      <button onclick="checkPassword()"
+        style="width: 100%; background: #4a3b52; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">認証する</button>
+      <p id="authError" style="color: #c62828; font-size: 12px; margin-top: 8px; display: none;">パスワードが間違っています。</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1>刀剣乱舞 審神者便利ツール</h1>
+      <p class="subtitle">育成計算や部隊編成をサポートするツール集です</p>
+    </header>
+
+    <main class="card-grid">
+      <a href="exp.html" class="tool-card">
+        <div>
+          <div class="card-title">
+            <span>🌸</span> 経験値・レベル計算ツール
+          </div>
+          <div class="card-description">
+            現在の累積経験値からレベルを自動算出します。修行解禁レベル（特）や極レベルへの引き継ぎEXP計算にも対応しています。
+          </div>
+        </div>
+        <div class="card-btn">ツールを開く</div>
+      </a>
+
+      <a href="index.html" class="tool-card">
+        <div>
+          <div class="card-title">
+            <span>🎲</span> ランダム組み合わせツール
+          </div>
+          <div class="card-description">
+            刀剣男士をランダムに選出して部隊（6振）を編成します。日課レベリングや周回時の部隊決めに活用できます。
+          </div>
+        </div>
+        <div class="card-btn">ツールを開く</div>
+      </a>
+    </main>
+
+    <footer>
+      <p>&copy; 刀剣乱舞 審神者便利ツールポータル</p>
+    </footer>
+  </div>
+
+  <script>
+    function checkPassword() {
+      const correctPassword = "tothenorth";
+      const inputEl = document.getElementById('authPassword');
+      const errorEl = document.getElementById('authError');
+      const modalEl = document.getElementById('authModal');
+
+      if (!inputEl || !modalEl) return;
+
+      if (inputEl.value === correctPassword) {
+        modalEl.style.display = 'none';
+        sessionStorage.setItem('isAuthorized', 'true');
+      } else {
+        if (errorEl) errorEl.style.display = 'block';
+      }
+    }
+
+    // 既に認証済みの場合はモーダルを隠す
+    window.addEventListener('DOMContentLoaded', () => {
+      if (sessionStorage.getItem('isAuthorized') === 'true') {
+        const modalEl = document.getElementById('authModal');
+        if (modalEl) modalEl.style.display = 'none';
+      }
+    });
+  </script>
+
+</body>
+
+</html>
