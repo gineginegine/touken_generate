@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刀剣男士 データベース</title>
+    <!-- SheetJS & Google Fonts -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #eff6ff;
+            --primary-border: #3b82f6;
+            --accent: #d9534f;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px 16px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+
+        /* ステータスバー */
+        .status-bar {
+            background: #e0f2fe;
+            border-radius: var(--radius);
+            padding: 12px 20px;
+            text-align: center;
+            font-weight: 500;
+            color: #0369a1;
+            margin-bottom: 24px;
+            transition: all 0.3s;
+        }
+
+        .status-bar.success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-bar.error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* ナビゲーションタブ */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            padding: 12px 28px;
+            border: 2px solid #d1d5db;
+            background: #ffffff;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 30px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+        }
+
+        .tab-btn:hover {
+            border-color: var(--primary-border);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* メインカードパネル */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        /* チェックボックスグループ */
+        .checkbox-group-container {
+            width: 100%;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--primary);
+        }
+
+        .checkbox-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+        }
+
+        .checkbox-pill {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-pill input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-pill-text {
+            padding: 6px 14px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border-radius: 20px;
+            border: 1.5px solid #cbd5e1;
+            background-color: #ffffff;
+            color: #475569;
+            transition: all 0.2s;
+        }
+
+        .checkbox-pill input[type="checkbox"]:checked+.checkbox-pill-text {
+            background-color: #dbeafe;
+            border-color: var(--primary-border);
+            color: #1e40af;
+            font-weight: 700;
+        }
+
+        .checkbox-pill:hover .checkbox-pill-text {
+            border-color: #94a3b8;
+        }
+
+        .btn-small {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .btn-small:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        /* ★ 改善されたコントロールグループ（ソート用コントロール） */
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .select-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 140px;
+            flex: 1;
+        }
+
+        .select-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .custom-select-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-box select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            padding: 10px 36px 10px 14px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            font-family: inherit;
+            color: var(--text);
+            background-color: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .custom-select-box select:hover {
+            border-color: #94a3b8;
+            background-color: #fcfcfc;
+        }
+
+        .custom-select-box select:focus {
+            border-color: var(--primary-border);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background-color: #ffffff;
+        }
+
+        .custom-select-box::after {
+            content: "";
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 6px;
+            background-color: #64748b;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            pointer-events: none;
+            transition: transform 0.2s ease;
+        }
+
+        .custom-select-box:hover::after {
+            background-color: var(--primary);
+        }
+
+        .control-right-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+            padding-top: 18px;
+            /* ラベルとの位置合わせ */
+        }
+
+        /* 検索入力 */
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            border: 1.5px solid #cbd5e1;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-border);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* 刀剣男士選択UI */
+        .char-selector-box {
+            margin-bottom: 24px;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .char-card-btn {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            user-select: none;
+        }
+
+        .char-card-btn:hover {
+            border-color: #93c5fd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .char-card-btn.selected {
+            border-color: var(--primary-border);
+            background-color: var(--primary-light);
+            box-shadow: 0 0 0 2px var(--primary-border);
+        }
+
+        .char-card-btn.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #1d4ed8;
+        }
+
+        .char-card-no {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .char-card-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 4px 0;
+            word-break: break-all;
+        }
+
+        .char-card-type {
+            font-size: 0.72rem;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #334155;
+        }
+
+        /* 合戦場選択UI */
+        .area-selector-box {
+            margin-bottom: 24px;
+        }
+
+        .area-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .area-card-btn {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            user-select: none;
+        }
+
+        .area-card-btn:hover {
+            border-color: #93c5fd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .area-card-btn.selected {
+            border-color: var(--primary-border);
+            background-color: var(--primary-light);
+            box-shadow: 0 0 0 2px var(--primary-border);
+        }
+
+        .area-card-btn.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #1d4ed8;
+        }
+
+        .area-card-id {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .area-card-field {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
+        /* 遷移用インタラクティブリンク */
+        .link-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            user-select: none;
+        }
+
+        .link-chip:hover {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .link-btn-table {
+            display: inline-block;
+            font-weight: 700;
+            color: #1e40af;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .link-btn-table:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        /* ノードバッジ */
+        .node-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .node-badge.boss {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .node-badge.normal {
+            background: #e0f2fe;
+            color: #075985;
+            border: 1px solid #bae6fd;
+        }
+
+        /* 件数バッジ */
+        .count-badge {
+            font-size: 0.85rem;
+            color: #475569;
+            background: #e2e8f0;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* プロファイルヘッダー */
+        .profile-header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .profile-title {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .profile-title h2 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
+
+        .profile-no {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .meta-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        /* ステータスグリッド */
+        .status-group-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 20px 0 12px 0;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 2px;
+        }
+
+        /* 縦並び型情報レイアウト */
+        .info-vertical-stack {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            gap: 24px !important;
+            margin-top: 24px !important;
+        }
+
+        .info-card-block {
+            display: block !important;
+            width: 100% !important;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+        }
+
+        .info-card-block h3 {
+            font-size: 1.1rem;
+            margin: 0 0 16px 0;
+            color: var(--primary);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ドロップ一覧ボタン風グリッドデザイン */
+        .drop-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        /* 経験値表示デザイン */
+        .exp-container {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .exp-box {
+            flex: 1;
+            min-width: 160px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 14px 18px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .exp-box-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .exp-box-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* 回想詳細リスト */
+        .story-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+            font-size: 0.88rem;
+        }
+
+        .story-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .story-title {
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .story-members {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .story-biko {
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            background: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* テーブルデザイン */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 700;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        /* 資材バッジ */
+        .resource-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .res-badge {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>刀剣男士 データベース</h1>
+        </header>
+
+        <!-- 読込ステータス表示 -->
+        <div class="status-bar" id="status-bar">
+            「touken_mst.xlsx」を自動検索中...
+        </div>
+
+        <!-- ナビゲーションタブ -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-btn-char"
+                onclick="switchTab('char-tab', 'tab-btn-char')">刀剣男士詳細</button>
+            <button class="tab-btn" id="tab-btn-area" onclick="switchTab('area-tab', 'tab-btn-area')">合戦場詳細</button>
+            <button class="tab-btn" id="tab-btn-sort"
+                onclick="switchTab('sort-tab', 'tab-btn-sort')">ステータス一覧・比較</button>
+        </div>
+
+        <!-- TAB 1: 刀剣男士詳細 -->
+        <div id="char-tab" class="tab-content active">
+            <div class="card">
+                <div class="checkbox-group-container">
+                    <div class="checkbox-group-header">
+                        <span>刀種フィルター（複数選択可）</span>
+                        <div>
+                            <button class="btn-small"
+                                onclick="toggleAllCheckboxes('char-types', true); updateCharSelectionGrid();">全選択</button>
+                            <button class="btn-small"
+                                onclick="toggleAllCheckboxes('char-types', false); updateCharSelectionGrid();">解除</button>
+                        </div>
+                    </div>
+                    <div class="checkbox-grid" id="char-types">
+                        <label class="checkbox-pill"><input type="checkbox" value="短刀" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">短刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="脇差" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">脇差</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="打刀" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">打刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="太刀" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">太刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="大太刀" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">大太刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="槍" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">槍</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="薙刀" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">薙刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="剣" checked
+                                onchange="updateCharSelectionGrid()"><span class="checkbox-pill-text">剣</span></label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <input type="text" id="char-search-input" class="search-input"
+                        placeholder="🔍 名前や刀帳No.で検索 (例: 三日月, 3)" oninput="updateCharSelectionGrid()">
+                </div>
+
+                <div class="char-selector-box">
+                    <div class="char-grid" id="char-card-grid">
+                        <div class="empty-msg" style="grid-column: 1/-1; padding: 20px 0;">データを読み込み中...</div>
+                    </div>
+                </div>
+
+                <div id="char-detail-output">
+                    <div class="empty-msg">上のリストから刀剣男士を選択してください</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: 合戦場詳細 -->
+        <div id="area-tab" class="tab-content">
+            <div class="card">
+                <div style="margin-bottom: 16px;">
+                    <input type="text" id="area-search-input" class="search-input"
+                        placeholder="🔍 合戦場名や番号で検索 (例: 5-4, 池田屋, 阿津賀志山)" oninput="updateAreaSelectionGrid()">
+                </div>
+
+                <div class="area-selector-box">
+                    <div class="area-grid" id="area-card-grid">
+                        <div class="empty-msg" style="grid-column: 1/-1; padding: 20px 0;">データを読み込み中...</div>
+                    </div>
+                </div>
+
+                <div id="area-detail-output">
+                    <div class="empty-msg">上のリストから合戦場を選択してください</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ソート・比較 -->
+        <div id="sort-tab" class="tab-content">
+            <div class="card">
+                <div class="checkbox-group-container">
+                    <div class="checkbox-group-header">
+                        <span>表示対象の刀種（複数選択可）</span>
+                        <div>
+                            <button class="btn-small"
+                                onclick="toggleAllCheckboxes('sort-types', true); renderSortTable();">全選択</button>
+                            <button class="btn-small"
+                                onclick="toggleAllCheckboxes('sort-types', false); renderSortTable();">解除</button>
+                        </div>
+                    </div>
+                    <div class="checkbox-grid" id="sort-types">
+                        <label class="checkbox-pill"><input type="checkbox" value="短刀" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">短刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="脇差" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">脇差</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="打刀" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">打刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="太刀" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">太刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="大太刀" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">大太刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="槍" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">槍</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="薙刀" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">薙刀</span></label>
+                        <label class="checkbox-pill"><input type="checkbox" value="剣" checked
+                                onchange="renderSortTable()"><span class="checkbox-pill-text">剣</span></label>
+                    </div>
+                </div>
+
+                <!-- デザインを改良したコントロールエリア -->
+                <div class="control-group">
+                    <div class="select-wrapper">
+                        <span class="select-label">表示モード</span>
+                        <div class="custom-select-box">
+                            <select id="sort-mode" onchange="renderSortTable()">
+                                <option value="初">初 (通常)</option>
+                                <option value="極">極</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="select-wrapper">
+                        <span class="select-label">ソート項目</span>
+                        <div class="custom-select-box">
+                            <select id="sort-key" onchange="renderSortTable()">
+                                <option value="id">刀帳番号</option>
+                                <option value="height">身長</option>
+                                <option value="kido">機動</option>
+                                <option value="dageki">打撃</option>
+                                <option value="seizon">生存</option>
+                                <option value="tosotsu">統率</option>
+                                <option value="syoryoku">衝力</option>
+                                <option value="teisatsu">偵察</option>
+                                <option value="inpei">隠蔽</option>
+                                <option value="hissatsu">必殺</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="select-wrapper">
+                        <span class="select-label">順序</span>
+                        <div class="custom-select-box">
+                            <select id="sort-order" onchange="renderSortTable()">
+                                <option value="asc">昇順 (小さい順)</option>
+                                <option value="desc">降順 (大きい順)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-right-group">
+                        <label class="checkbox-pill" id="hide-unimplemented-label" style="display:none;">
+                            <input type="checkbox" id="hide-unimplemented" onchange="renderSortTable()" checked>
+                            <span class="checkbox-pill-text"
+                                style="font-size:0.82rem; padding: 6px 12px;">極未実装を隠す</span>
+                        </label>
+
+                        <span class="count-badge" id="sort-count-badge">0 件</span>
+                    </div>
+                </div>
+
+                <div class="table-wrapper" id="sort-table-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let DB = { char: [], status_a: [], status_b: [], story: [], area: [], drop: [] };
+        let selectedCharId = null;
+        let selectedAreaId = null;
+
+        window.addEventListener('DOMContentLoaded', loadExcelAuto);
+
+        function loadExcelAuto() {
+            // 未認証の場合はホーム画面へリダイレクト
+            if (sessionStorage.getItem('isAuthorized') !== 'true') {
+                window.location.href = 'home.html';
+                return;
+            }
+            const statusBar = document.getElementById('status-bar');
+            const fileName = 'touken_mst.xlsx';
+
+            fetch(fileName)
+                .then(res => {
+                    if (!res.ok) throw new Error(`ファイルアクセス失敗 (${res.status})`);
+                    return res.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                    DB.char = getSheetData(workbook, "char");
+                    DB.status_a = getSheetData(workbook, "status_a");
+                    DB.status_b = getSheetData(workbook, "status_b");
+                    DB.story = getSheetData(workbook, "story");
+                    DB.area = getSheetData(workbook, "area");
+                    DB.drop = getSheetData(workbook, "drop");
+
+                    statusBar.textContent = `✅ データベース「${fileName}」を読み込みました`;
+                    statusBar.className = 'status-bar success';
+                    initUI();
+                })
+                .catch(err => {
+                    console.error(err);
+                    statusBar.innerHTML = `⚠️ データの自動読み込みに失敗しました。<br><small>「${fileName}」が同じディレクトリにあり、Webサーバー経由（http://...）でアクセスしているか確認してください。</small>`;
+                    statusBar.className = 'status-bar error';
+                });
+        }
+
+        function getSheetData(workbook, name) {
+            const sheet = workbook.Sheets[name];
+            return sheet ? XLSX.utils.sheet_to_json(sheet, { defval: "" }) : [];
+        }
+
+        function initUI() {
+            updateCharSelectionGrid();
+            updateAreaSelectionGrid();
+            renderSortTable();
+        }
+
+        function getSelectedTypes(containerId) {
+            const container = document.getElementById(containerId);
+            const checkedEls = container.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkedEls).map(el => el.value);
+        }
+
+        function toggleAllCheckboxes(containerId, isChecked) {
+            const container = document.getElementById(containerId);
+            container.querySelectorAll('input[type="checkbox"]').forEach(el => {
+                el.checked = isChecked;
+            });
+        }
+
+        function switchTab(tabId, btnId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            if (btnId) {
+                document.getElementById(btnId).classList.add('active');
+            }
+        }
+
+        function navigateToArea(areaId) {
+            selectArea(areaId);
+            switchTab('area-tab', 'tab-btn-area');
+        }
+
+        function navigateToChar(charId) {
+            const char = DB.char.find(c => Number(c.id) === Number(charId));
+            if (char && char.type) {
+                const checkbox = document.querySelector(`#char-types input[value="${char.type}"]`);
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                }
+            }
+
+            selectChar(charId);
+            switchTab('char-tab', 'tab-btn-char');
+        }
+
+        function updateCharSelectionGrid() {
+            const selectedTypes = getSelectedTypes('char-types');
+            const searchText = document.getElementById('char-search-input').value.trim().toLowerCase();
+            const grid = document.getElementById('char-card-grid');
+
+            const filteredChars = DB.char.filter(c => {
+                const matchType = selectedTypes.includes(c.type);
+                const matchSearch = !searchText ||
+                    String(c.name).toLowerCase().includes(searchText) ||
+                    String(c.id).includes(searchText);
+                return matchType && matchSearch;
+            });
+
+            if (filteredChars.length === 0) {
+                grid.innerHTML = '<div class="empty-msg" style="grid-column: 1/-1;">該当する刀剣男士が見つかりません</div>';
+                return;
+            }
+
+            let html = '';
+            filteredChars.forEach(c => {
+                const isSelected = Number(c.id) === Number(selectedCharId);
+                html += `
+      <div class="char-card-btn ${isSelected ? 'selected' : ''}" onclick="selectChar(${c.id})">
+        <span class="char-card-no">No.${c.id}</span>
+        <span class="char-card-name">${c.name}</span>
+        <span class="char-card-type">${c.type || '不明'}</span>
+      </div>
+    `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function selectChar(id) {
+            selectedCharId = id;
+            updateCharSelectionGrid();
+            renderCharDetail();
+        }
+
+        function updateAreaSelectionGrid() {
+            const searchText = document.getElementById('area-search-input').value.trim().toLowerCase();
+            const grid = document.getElementById('area-card-grid');
+
+            const filteredAreas = DB.area.filter(a => {
+                const matchSearch = !searchText ||
+                    String(a.area).toLowerCase().includes(searchText) ||
+                    String(a.name).toLowerCase().includes(searchText);
+                return matchSearch;
+            });
+
+            if (filteredAreas.length === 0) {
+                grid.innerHTML = '<div class="empty-msg" style="grid-column: 1/-1;">該当する合戦場が見つかりません</div>';
+                return;
+            }
+
+            let html = '';
+            filteredAreas.forEach(a => {
+                const isSelected = String(a.area) === String(selectedAreaId);
+                html += `
+      <div class="area-card-btn ${isSelected ? 'selected' : ''}" onclick="selectArea('${a.area}')">
+        <span class="area-card-id">${a.area}</span>
+        <span class="area-card-field">${a.name || '名称なし'}</span>
+      </div>
+    `;
+            });
+            grid.innerHTML = html;
+        }
+
+        function selectArea(areaId) {
+            selectedAreaId = areaId;
+            updateAreaSelectionGrid();
+            renderAreaDetail();
+        }
+
+        function getKiwamiId(baseId) {
+            const num = Number(baseId);
+            if (num === 107) return 111;
+            if (num === 112) return 115;
+            return num + 1;
+        }
+
+        /* 1. 刀剣男士詳細レンダー */
+        function renderCharDetail() {
+            const output = document.getElementById('char-detail-output');
+            if (!selectedCharId && selectedCharId !== 0) {
+                output.innerHTML = '<div class="empty-msg">上のリストから刀剣男士を選択してください</div>';
+                return;
+            }
+
+            const numId = Number(selectedCharId);
+            const char = DB.char.find(c => Number(c.id) === numId) || {};
+            const stA = DB.status_a.find(s => Number(s.id) === numId) || {};
+            const stB = DB.status_b.find(s => Number(s.id) === getKiwamiId(numId));
+
+            const stories = DB.story.filter(s => [s.charA, s.charB, s.charC, s.charD, s.charE, s.charF].map(Number).includes(numId));
+            const drops = DB.drop.filter(d => Number(d.id) === numId);
+            const isKanto = drops.some(d => String(d.area) === "鍛刀");
+            const battleDrops = drops.filter(d => String(d.area) !== "鍛刀");
+
+            const statFields = [
+                { label: "生存", key: "seizon" }, { label: "打撃", key: "dageki" },
+                { label: "統率", key: "tosotsu" }, { label: "機動", key: "kido" },
+                { label: "衝力", key: "syoryoku" }, { label: "偵察", key: "teisatsu" },
+                { label: "隠蔽", key: "inpei" }, { label: "必殺", key: "hissatsu" }
+            ];
+
+            let html = `
+    <div class="profile-header">
+      <div class="profile-title">
+        <h2>${char.name}</h2>
+        <span class="profile-no">刀帳 No.${char.id}</span>
+      </div>
+      <div class="meta-tags">
+        <span class="tag">刀種: ${char.type || '不明'}</span>
+        <span class="tag">刀派: ${char.school || 'なし'}</span>
+        <span class="tag">身長: ${char.height ? char.height + 'cm' : '不明'}</span>
+      </div>
+    </div>
+
+    <div class="status-group-title">🌸 初期ステータス（初）</div>
+    <div class="status-grid">
+      ${statFields.map(f => `
+        <div class="stat-box">
+          <div class="stat-label">${f.label}</div>
+          <div class="stat-value">${stA[f.key] !== undefined && stA[f.key] !== "" ? stA[f.key] : '-'}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="status-group-title">⚡ ステータス（極）</div>
+    ${stB ? `
+      <div class="status-grid">
+        ${statFields.map(f => `
+          <div class="stat-box">
+            <div class="stat-label">${f.label}</div>
+            <div class="stat-value">${stB[f.key] !== undefined && stB[f.key] !== "" ? stB[f.key] : '-'}</div>
+          </div>
+        `).join('')}
+      </div>
+    ` : '<p style="color:var(--text-muted); font-size:0.9rem;">極のデータはありません。</p>'}
+
+    <div class="info-vertical-stack">
+      <div class="info-card-block">
+        <h3>📍 入手場所・ドロップ情報</h3>
+        <div style="font-size:0.88rem; margin-bottom:12px; background:#f1f5f9; padding:8px 12px; border-radius:6px; display:inline-block;">
+          <strong>鍛刀:</strong> ${isKanto ? "⭕ 出現あり" : "❌ 非対応"}
+        </div>
+        <div>
+          ${battleDrops.length > 0 ? `
+            <div class="area-grid">
+              ${battleDrops.map(d => `
+                <div class="area-card-btn" onclick="navigateToArea('${d.area}')">
+                  <span class="node-badge ${d.node_type === 'B' ? 'boss' : 'normal'}">${d.node_type === 'B' ? 'ボス' : '通常'}</span>
+                  <span class="area-card-id" style="font-size:0.95rem;">${d.area}</span>
+                  <span class="area-card-field">合戦場へ</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<p style="font-size:0.88rem; color:var(--text-muted);">合戦場ドロップ情報なし</p>'}
+        </div>
+      </div>
+
+      <div class="info-card-block">
+        <h3>📖 関連回想</h3>
+        ${stories.length > 0 ? stories.map(s => {
+                const memberIds = [s.charA, s.charB, s.charC, s.charD, s.charE, s.charF].filter(id => id !== "" && id !== undefined && id !== null);
+                const memberChips = memberIds.map(mId => {
+                    const found = DB.char.find(c => Number(c.id) === Number(mId));
+                    if (!found) return `<span class="tag">No.${mId}</span>`;
+                    return `<span class="link-chip" onclick="navigateToChar(${found.id})">${found.name}</span>`;
+                }).join('');
+
+                return `
+            <div class="story-item">
+              <div class="story-title">回想${s.id}: ${s.name}</div>
+              <div class="story-members">
+                <span style="font-weight:bold; color:var(--text-muted);">登場:</span>
+                ${memberChips}
+              </div>
+              ${s.biko ? `<div class="story-biko">💡 ${s.biko}</div>` : ''}
+            </div>
+          `;
+            }).join('') : '<p style="font-size:0.9rem; color:var(--text-muted);">関連する回想はありません</p>'}
+      </div>
+    </div>
+  `;
+            output.innerHTML = html;
+        }
+
+        /* 2. 合戦場詳細レンダー */
+        function renderAreaDetail() {
+            const output = document.getElementById('area-detail-output');
+            if (!selectedAreaId) { output.innerHTML = '<div class="empty-msg">上のリストから合戦場を選択してください</div>'; return; }
+
+            const area = DB.area.find(a => String(a.area) === String(selectedAreaId)) || {};
+            let drops = DB.drop.filter(d => String(d.area) === String(selectedAreaId));
+            let areaStories = DB.story.filter(s => String(s.area) === String(selectedAreaId));
+
+            let html = `
+    <div class="profile-header">
+      <h2>合戦場 ${area.area} ${area.name}</h2>
+      <div class="meta-tags">
+        <span class="tag">時間: ${area.time || '-'}</span>
+        <span class="tag">場所: ${area.field || '-'}</span>
+        <span class="tag">天候: ${area.weather || '-'}</span>
+      </div>
+    </div>
+
+    <div class="info-vertical-stack">
+      <div class="info-card-block">
+        <h3>✨ 獲得経験値・取得可能資源</h3>
+        <div class="exp-container">
+          <div class="exp-box">
+            <div class="exp-box-title">通常マス経験値</div>
+            <div class="exp-box-value">${area.normalExp || 0} <span style="font-size:0.8rem;">Exp</span></div>
+          </div>
+          <div class="exp-box">
+            <div class="exp-box-title">ボスマス経験値</div>
+            <div class="exp-box-value" style="color:var(--accent);">${area.bossExp || 0} <span style="font-size:0.8rem;">Exp</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <div style="font-size:0.85rem; font-weight:bold; color:var(--text-muted); margin-bottom:8px;">取得資源</div>
+          <div class="resource-badges">
+            <div class="res-badge">木炭: <strong>${area.mokutan || 0}</strong></div>
+            <div class="res-badge">玉鋼: <strong>${area.tamahagane || 0}</strong></div>
+            <div class="res-badge">冷却材: <strong>${area.reikyakuzai || 0}</strong></div>
+            <div class="res-badge">砥石: <strong>${area.toishi || 0}</strong></div>
+            <div class="res-badge">依頼札: <strong>${area.iraihuda ? 'あり' : 'なし'}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card-block">
+        <h3>🗡️ ドロップする刀剣男士</h3>
+        ${drops.length > 0 ? `
+          <div class="drop-grid-container">
+            ${drops.map(d => {
+                const char = DB.char.find(c => Number(c.id) === Number(d.id));
+                const isBoss = d.node_type === 'B';
+                return `
+                <div class="char-card-btn" ${char ? `onclick="navigateToChar(${char.id})"` : ''}>
+                  <span class="node-badge ${isBoss ? 'boss' : 'normal'}">${isBoss ? 'ボス' : '通常'}</span>
+                  <span class="char-card-name">${char ? char.name : 'No.' + d.id}</span>
+                  <span class="char-card-type">${char ? (char.type || '不明') : '-'}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : '<p style="font-size:0.88rem; color:var(--text-muted);">ドロップ情報はありません</p>'}
+      </div>
+
+      <div class="info-card-block">
+        <h3>📖 発生する回想一覧</h3>
+        ${areaStories.length > 0 ? areaStories.map(s => {
+                const memberIds = [s.charA, s.charB, s.charC, s.charD, s.charE, s.charF].filter(id => id !== "" && id !== undefined && id !== null);
+                const memberChips = memberIds.map(mId => {
+                    const found = DB.char.find(c => Number(c.id) === Number(mId));
+                    if (!found) return `<span class="tag">No.${mId}</span>`;
+                    return `<span class="link-chip" onclick="navigateToChar(${found.id})">${found.name}</span>`;
+                }).join('');
+
+                return `
+            <div class="story-item">
+              <div class="story-title">回想${s.id}: ${s.name}</div>
+              <div class="story-members">
+                <span style="font-weight:bold; color:var(--text-muted);">登場男士:</span>
+                ${memberChips}
+              </div>
+              ${s.biko ? `<div class="story-biko">💡 ${s.biko}</div>` : ''}
+            </div>
+          `;
+            }).join('') : '<p style="font-size:0.88rem; color:var(--text-muted);">この合戦場で発生する回想はありません</p>'}
+      </div>
+    </div>
+  `;
+            output.innerHTML = html;
+        }
+
+        /* 3. ソートテーブルレンダー */
+        function renderSortTable() {
+            const selectedTypes = getSelectedTypes('sort-types');
+            const mode = document.getElementById('sort-mode').value;
+            const key = document.getElementById('sort-key').value;
+            const order = document.getElementById('sort-order').value;
+            const hideUnimp = document.getElementById('hide-unimplemented').checked;
+            const output = document.getElementById('sort-table-output');
+            const countBadge = document.getElementById('sort-count-badge');
+
+            const hideCheckboxLabel = document.getElementById('hide-unimplemented-label');
+            hideCheckboxLabel.style.display = (mode === '極') ? 'inline-flex' : 'none';
+
+            if (DB.char.length === 0) {
+                output.innerHTML = '<div class="empty-msg">データが存在しません</div>';
+                countBadge.textContent = '0 件';
+                return;
+            }
+
+            let list = DB.char.filter(c => selectedTypes.includes(c.type));
+
+            list = list.map(c => {
+                const numId = Number(c.id);
+                const stA = DB.status_a.find(s => Number(s.id) === numId) || {};
+                const kiwamiId = getKiwamiId(numId);
+                const stB = DB.status_b.find(s => Number(s.id) === kiwamiId);
+
+                const displayName = mode === '極' ? `${c.name} 極` : c.name;
+                const targetStatus = mode === '初' ? stA : (stB || {});
+
+                return {
+                    ...c,
+                    displayName,
+                    targetStatus,
+                    kiwamiId,
+                    hasKiwami: !!stB,
+                    targetVal: targetStatus[key]
+                };
+            });
+
+            if (mode === '極' && hideUnimp) {
+                list = list.filter(item => item.hasKiwami);
+            }
+
+            countBadge.textContent = `${list.length} 件`;
+
+            list.sort((a, b) => {
+                let vA = a.targetVal !== undefined && a.targetVal !== "" ? a.targetVal : a[key];
+                let vB = b.targetVal !== undefined && b.targetVal !== "" ? b.targetVal : b[key];
+
+                let numA = Number(vA);
+                let numB = Number(vB);
+
+                if (isNaN(numA) || vA === "" || vA === undefined) numA = -1;
+                if (isNaN(numB) || vB === "" || vB === undefined) numB = -1;
+
+                return order === 'asc' ? (numA > numB ? 1 : -1) : (numA < numB ? 1 : -1);
+            });
+
+            if (list.length === 0) {
+                output.innerHTML = '<div class="empty-msg">選択した刀種に該当する刀剣男士が見つかりませんでした</div>';
+                return;
+            }
+
+            let html = `
+    <table>
+      <thead>
+        <tr>
+          <th>${mode === '極' ? '極No.' : 'No.'}</th>
+          <th class="text-left">名前</th>
+          <th>刀種</th>
+          <th>身長</th>
+          <th>機動</th>
+          <th>打撃</th>
+          <th>生存</th>
+          <th>統率</th>
+          <th>衝力</th>
+          <th>偵察</th>
+          <th>隠蔽</th>
+          <th>必殺</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(item => {
+                const st = item.targetStatus;
+                const displayId = mode === '極' ? (item.hasKiwami ? item.kiwamiId : '-') : item.id;
+
+                return `
+            <tr>
+              <td>${displayId}</td>
+              <td class="text-left"><span class="link-btn-table" onclick="navigateToChar(${item.id})">${item.displayName}</span></td>
+              <td><span class="tag">${item.type || '-'}</span></td>
+              <td>${item.height ? item.height + 'cm' : '-'}</td>
+              <td>${st.kido ?? '-'}</td>
+              <td>${st.dageki ?? '-'}</td>
+              <td>${item.seizon ?? st.seizon ?? '-'}</td>
+              <td>${st.tosotsu ?? '-'}</td>
+              <td>${st.syoryoku ?? '-'}</td>
+              <td>${st.teisatsu ?? '-'}</td>
+              <td>${st.inpei ?? '-'}</td>
+              <td>${st.hissatsu ?? '-'}</td>
+            </tr>
+          `;
+            }).join('')}
+      </tbody>
+    </table>
+  `;
+            output.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

@@ -165,6 +165,19 @@
     </header>
 
     <main class="card-grid">
+      <!-- 今回追加したボイス解放チェッカーへのリンクカード -->
+      <a href="touken.html" class="tool-card">
+        <div>
+          <div class="card-title">
+            <span>🔊</span> 刀剣乱舞攻略ページ
+          </div>
+          <div class="card-description">
+            刀剣乱舞の合戦場情報や刀剣男士のステータス、回想一覧が見れます
+          </div>
+        </div>
+        <div class="card-btn">ツールを開く</div>
+      </a>
+
       <a href="exp.html" class="tool-card">
         <div>
           <div class="card-title">
@@ -212,11 +225,20 @@
       }
     }
 
-    // 既に認証済みの場合はモーダルを隠す
+    // 既に認証済みの場合はモーダルを隠す & Enterキーで認証を実行できるように対応
     window.addEventListener('DOMContentLoaded', () => {
       if (sessionStorage.getItem('isAuthorized') === 'true') {
         const modalEl = document.getElementById('authModal');
         if (modalEl) modalEl.style.display = 'none';
+      }
+
+      const inputEl = document.getElementById('authPassword');
+      if (inputEl) {
+        inputEl.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            checkPassword();
+          }
+        });
       }
     });
   </script>
