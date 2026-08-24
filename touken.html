@@ -80,23 +80,24 @@
         .tabs {
             display: flex;
             justify-content: center;
-            gap: 12px;
+            gap: 8px;
             margin-bottom: 24px;
             border-bottom: 2px solid var(--border);
             padding-bottom: 12px;
         }
 
         .tab-btn {
-            padding: 12px 28px;
+            padding: 10px 20px;
             border: 2px solid #d1d5db;
             background: #ffffff;
             color: var(--text-muted);
             cursor: pointer;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             border-radius: 30px;
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            white-space: nowrap;
         }
 
         .tab-btn:hover {
@@ -206,12 +207,12 @@
             border-color: #94a3b8;
         }
 
-        /* ★ 改善されたコントロールグループ（ソート用コントロール） */
+        /* コントロールグループ（ソート用コントロール） */
         .control-group {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
-            align-items: center;
+            align-items: flex-end;
             margin-bottom: 20px;
             background: #f8fafc;
             padding: 16px 20px;
@@ -293,8 +294,6 @@
             align-items: center;
             gap: 12px;
             margin-left: auto;
-            padding-top: 18px;
-            /* ラベルとの位置合わせ */
         }
 
         /* 検索入力 */
@@ -724,6 +723,7 @@
         /* テーブルデザイン */
         .table-wrapper {
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         table {
@@ -775,11 +775,96 @@
             color: var(--text-muted);
             padding: 40px 0;
         }
+
+        /* スマホ向けレイアウト最適化 (画面幅 600px 以下) */
+        @media (max-width: 600px) {
+            body {
+                padding: 12px 8px;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .card {
+                padding: 16px 12px;
+            }
+
+            /* タブボタンを横スクロール可能に */
+            .tabs {
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 8px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+            }
+
+            /* グリッドの列数を自動最適化 */
+            .char-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 8px;
+                padding: 8px;
+            }
+
+            .area-grid,
+            .drop-grid-container {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+                gap: 8px;
+            }
+
+            .status-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+
+            .stat-box {
+                padding: 6px 2px;
+            }
+
+            .stat-label {
+                font-size: 0.7rem;
+            }
+
+            .stat-value {
+                font-size: 0.95rem;
+            }
+
+            /* コントロールエリアの縦並び化 */
+            .control-group {
+                padding: 12px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .select-wrapper {
+                width: 100%;
+            }
+
+            .control-right-group {
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+                margin-top: 8px;
+            }
+
+            .info-card-block {
+                padding: 14px;
+            }
+        }
     </style>
 </head>
 
 <body>
-
+    <!-- ホームに戻るリンク -->
+    <a href="home.html"
+        style="display: inline-block; margin-bottom: 15px; color: #4a3b52; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
+        ← ホームに戻る
+    </a>
     <div class="container">
         <header>
             <h1>刀剣男士 データベース</h1>
