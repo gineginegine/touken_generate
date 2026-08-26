@@ -469,6 +469,12 @@
     });
 
     function initGroupMembers() {
+      // 未認証の場合はホーム画面へリダイレクト
+      if (sessionStorage.getItem('isAuthorized') !== 'true') {
+        window.location.href = 'home.html';
+        return;
+      }
+
       groups.forEach(g => {
         if (!groupMembers[g.id]) {
           groupMembers[g.id] = [];
