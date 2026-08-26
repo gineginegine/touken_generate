@@ -631,8 +631,8 @@
             const isLeader = g.leaderId === id;
             tagsHtml += `
             <div class="member-tag ${isLeader ? 'is-leader' : ''}">
-              <span class="leader-btn" onclick="toggleLeader('${g.id}', ${touken.id}, event)" title="${isLeader ? 'リーダー解除' : 'リーダー（長）に指定'}">
-                ${isLeader ? '👑[長]' : '☆'}
+              <span class="leader-btn" onclick="toggleLeader('${g.id}', ${touken.id}, event)" title="${isLeader ? 'リーダー解除' : 'リーダーに指定'}">
+                ${isLeader ? '👑' : '☆'}
               </span>
               <span>${touken.name}</span>
               <span class="remove-btn" onclick="removeMember('${g.id}', ${touken.id}, event)">&times;</span>
@@ -792,7 +792,7 @@
         if (assignedTouken.length > 0) {
           const memberListStr = assignedTouken.map(a => {
             const isLeader = g.leaderId === a.id;
-            return isLeader ? `${a.name} (長)` : a.name;
+            return isLeader ? `${a.name}` : a.name;
           }).join("、");
           text += " " + memberListStr + "\n";
         } else {
