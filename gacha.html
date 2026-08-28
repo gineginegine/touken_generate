@@ -17,7 +17,7 @@
         }
 
         .container {
-            max-width: 650px;
+            max-width: 700px;
             margin: 0 auto;
             background: #1e1e24;
             padding: 25px;
@@ -68,6 +68,12 @@
             background: linear-gradient(135deg, #e65100, #bf360c);
         }
 
+        button.btn-reset {
+            background: #555;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+
         button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
@@ -89,7 +95,70 @@
             min-height: 120px;
         }
 
-        /* グリッドレイアウト */
+        /* 統計エリア */
+        .stats-container {
+            margin-top: 25px;
+            background: #252530;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #444;
+            text-align: left;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stats-title {
+            font-weight: bold;
+            color: #ffca28;
+            font-size: 15px;
+        }
+
+        .total-count-badge {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffe082;
+        }
+
+        .history-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .history-item {
+            background: #1a1a20;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #555;
+        }
+
+        .history-item.rank-gold {
+            border-left-color: #ffd700;
+        }
+
+        .history-item.rank-silver {
+            border-left-color: #b0bec5;
+        }
+
+        .history-item.rank-bronze {
+            border-left-color: #cd7f32;
+        }
+
+        /* ガチャグリッド表示 */
         .gacha-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -97,7 +166,7 @@
             margin-top: 15px;
         }
 
-        /* 基本カード (それ以外: 通常) */
+        /* 基本カード */
         .gacha-card {
             background: #252530;
             border: 1px solid #444;
@@ -112,7 +181,7 @@
             align-items: center;
         }
 
-        /* ランク1：0.001以下 (極レア / 金枠 + 発光) */
+        /* レア度別スタイル */
         .gacha-card.rank-gold {
             background: linear-gradient(135deg, #3d3215, #1f1807);
             border: 2px solid #ffd700;
@@ -131,7 +200,6 @@
             text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
         }
 
-        /* ランク2：0.005以下 (超レア / 銀枠) */
         .gacha-card.rank-silver {
             background: linear-gradient(135deg, #2c3540, #182026);
             border: 2px solid #b0bec5;
@@ -147,7 +215,6 @@
             color: #e0e0e0;
         }
 
-        /* ランク3：0.01未満 (レア / 銅枠・ブロンズ) */
         .gacha-card.rank-bronze {
             background: linear-gradient(135deg, #36251b, #1c130e);
             border: 2px solid #cd7f32;
@@ -163,7 +230,6 @@
             color: #ffcc99;
         }
 
-        /* 金枠の発光アニメーション */
         @keyframes goldGlow {
             0% {
                 box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
@@ -174,7 +240,6 @@
             }
         }
 
-        /* レア度バッジ */
         .badge {
             font-size: 9px;
             padding: 2px 6px;
@@ -197,7 +262,6 @@
             word-break: break-all;
         }
 
-        /* 単発表示用 */
         .single-container {
             display: flex;
             justify-content: center;
@@ -220,11 +284,6 @@
 </head>
 
 <body>
-    <!-- ホームに戻るリンク -->
-    <a href="home.html"
-        style="display: inline-block; margin-bottom: 15px; color: #b7b6b8; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
-        ← ホームに戻る
-    </a>
 
     <div class="container">
         <h2>鍛刀シミュレーター (All 700)</h2>
@@ -247,10 +306,26 @@
         <div id="result">
             <p style="color:#888;">データを準備中です...</p>
         </div>
+
+        <!-- 成果集計・カウントエリア -->
+        <div class="stats-container">
+            <div class="stats-header">
+                <div class="stats-title">
+                    📊 鍛刀結果の集計 (<span class="total-count-badge" id="totalCount">0</span> 連)
+                </div>
+                <button class="btn-reset" onclick="resetStats()">データリセット</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <div style="color:#777; font-size:12px; grid-column: 1 / -1;">鍛刀を行うと、ここに獲得した刀剣男士の獲得数が記録されます。</div>
+            </div>
+        </div>
     </div>
 
     <script>
         let swordDatabase = [];
+        let totalDrawCount = 0;
+        let swordCounts = {}; // { id: 獲得数 }
+
         const EXCEL_FILE_PATH = 'touken_mst.xlsx';
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -258,11 +333,6 @@
         });
 
         async function loadExcelAutomatically() {
-            // 未認証の場合はホーム画面へリダイレクト
-            if (sessionStorage.getItem('isAuthorized') !== 'true') {
-                window.location.href = 'home.html';
-                return;
-            }
             const statusEl = document.getElementById('status');
             const resultEl = document.getElementById('result');
 
@@ -325,20 +395,18 @@
             return swordDatabase[swordDatabase.length - 1];
         }
 
-        // レア度判定用関数 (4段階に振り分け)
         function getRarityInfo(parse) {
             if (parse <= 0.001) {
-                return { class: 'rank-gold', label: 'UR' };
+                return { class: 'rank-gold', label: '極超極稀' };
             } else if (parse <= 0.005) {
-                return { class: 'rank-silver', label: 'SSR' };
-            } else if (parse < 0.01) {
-                return { class: 'rank-bronze', label: 'SR' };
+                return { class: 'rank-silver', label: '超極稀' };
+            } else if (parse < 0.015) {
+                return { class: 'rank-bronze', label: '極稀' };
             } else {
-                return { class: '', label: 'N' };
+                return { class: '', label: '通常' };
             }
         }
 
-        // カードHTML生成関数
         function createCardHtml(sword) {
             const rarity = getRarityInfo(sword.parse);
             return `
@@ -354,27 +422,72 @@
             if (swordDatabase.length === 0) return;
 
             const resultDiv = document.getElementById('result');
+            let cardsHtml = '';
+
+            for (let i = 0; i < count; i++) {
+                const selected = drawOne();
+
+                // カウントの加算処理
+                totalDrawCount++;
+                swordCounts[selected.id] = (swordCounts[selected.id] || 0) + 1;
+
+                cardsHtml += createCardHtml(selected);
+            }
 
             if (count === 1) {
-                const selected = drawOne();
-                resultDiv.innerHTML = `
-      <div class="single-container">
-        ${createCardHtml(selected)}
-      </div>
-    `;
+                resultDiv.innerHTML = `<div class="single-container">${cardsHtml}</div>`;
             } else {
-                let cardsHtml = '';
-                for (let i = 0; i < count; i++) {
-                    const selected = drawOne();
-                    cardsHtml += createCardHtml(selected);
-                }
-
                 resultDiv.innerHTML = `
       <div style="font-weight:bold; margin-bottom:10px; color:#ffca28;">【10連鍛刀結果】</div>
-      <div class="gacha-grid">
-        ${cardsHtml}
+      <div class="gacha-grid">${cardsHtml}</div>
+    `;
+            }
+
+            // 集計表示の更新
+            updateStatsDisplay();
+        }
+
+        // カウント状況を更新して描画
+        function updateStatsDisplay() {
+            document.getElementById('totalCount').textContent = totalDrawCount;
+
+            const historyListEl = document.getElementById('historyList');
+
+            if (totalDrawCount === 0) {
+                historyListEl.innerHTML = '<div style="color:#777; font-size:12px; grid-column: 1 / -1;">鍛刀を行うと、ここに獲得した刀剣男士の獲得数が記録されます。</div>';
+                return;
+            }
+
+            // 出現した刀剣男士を「レア順(parse昇順) -> ID順」でソート
+            const countedSwords = swordDatabase
+                .filter(sword => swordCounts[sword.id] > 0)
+                .sort((a, b) => {
+                    if (a.parse !== b.parse) return a.parse - b.parse;
+                    return a.id - b.id;
+                });
+
+            let listHtml = '';
+            countedSwords.forEach(sword => {
+                const rarity = getRarityInfo(sword.parse);
+                const count = swordCounts[sword.id];
+                listHtml += `
+      <div class="history-item ${rarity.class}">
+        <span>${sword.name}</span>
+        <span style="font-weight:bold; color:#ffca28;">× ${count}</span>
       </div>
     `;
+            });
+
+            historyListEl.innerHTML = listHtml;
+        }
+
+        // カウントのリセット
+        function resetStats() {
+            if (totalDrawCount === 0) return;
+            if (confirm("これまでの鍛刀カウントと獲得履歴をリセットしますか？")) {
+                totalDrawCount = 0;
+                swordCounts = {};
+                updateStatsDisplay();
             }
         }
     </script>
