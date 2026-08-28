@@ -198,6 +198,10 @@
             border-left: 3px solid #555;
         }
 
+        .history-item.rank-rainbow {
+            border-left-color: #ff00ff;
+        }
+
         .history-item.rank-gold {
             border-left-color: #ffd700;
         }
@@ -248,6 +252,29 @@
         }
 
         /* レア度別スタイル */
+        /* 🌈 999専用：虹色スタイル */
+        .gacha-card.rank-rainbow {
+            background: linear-gradient(135deg, #2a103c, #102a3c, #103c2a);
+            border: 2px solid transparent;
+            border-image: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) 1;
+            animation: rainbowGlow 1.5s infinite linear;
+        }
+
+        .gacha-card.rank-rainbow .badge {
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 0 0 3px #000;
+        }
+
+        .gacha-card.rank-rainbow .sword-name {
+            background: linear-gradient(90deg, #ff8a8a, #ffff8a, #8aff8a, #8affff, #d38aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+        }
+
         .gacha-card.rank-gold {
             background: linear-gradient(135deg, #3d3215, #1f1807);
             border: 2px solid #ffd700;
@@ -294,6 +321,32 @@
 
         .gacha-card.rank-bronze .sword-name {
             color: #ffcc99;
+        }
+
+        @keyframes rainbowGlow {
+            0% {
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+            }
+
+            20% {
+                box-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
+            }
+
+            40% {
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+            }
+
+            60% {
+                box-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+            }
+
+            80% {
+                box-shadow: 0 0 10px rgba(255, 0, 255, 0.7);
+            }
+
+            100% {
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+            }
         }
 
         @keyframes goldGlow {
@@ -439,14 +492,14 @@
 
                 const nameMap = {};
                 charData.forEach(row => {
-                    nameMap[row.id] = row.name || row.名前 || row.キャラクター名 || `刀帳No.${row.id}`;
+                    nameMap[row.id] = row.name || row.名前 || row.キャラクター名 || `限定キャラ`;
                 });
 
                 swordDatabase = probData.map(row => ({
-                    id: row.id,
+                    id: parseInt(row.id, 10), // 数値として読み込み
                     parse: parseFloat(row.parse) || 0,
                     time: row.time || row.鍛刀時間 || row.時間 || '0h30m',
-                    name: nameMap[row.id] || `刀帳No.${row.id}`
+                    name: nameMap[row.id] || `限定キャラ`
                 })).filter(item => item.parse > 0);
 
                 if (swordDatabase.length === 0) {
@@ -480,20 +533,23 @@
             return swordDatabase[swordDatabase.length - 1];
         }
 
-        function getRarityInfo(parse) {
-            if (parse <= 0.001) {
-                return { class: 'rank-gold', label: '極超極稀' };
-            } else if (parse <= 0.005) {
-                return { class: 'rank-silver', label: '超極稀' };
-            } else if (parse < 0.01) {
-                return { class: 'rank-bronze', label: '極稀' };
+        // 判定ロジック：idが999の場合のみ「虹」を判定
+        function getRarityInfo(sword) {
+            if (sword.id === 999) {
+                return { class: 'rank-rainbow', label: '限定' };
+            } else if (sword.parse <= 0.001) {
+                return { class: 'rank-gold', label: 'UR' };
+            } else if (sword.parse <= 0.005) {
+                return { class: 'rank-silver', label: 'SSR' };
+            } else if (sword.parse < 0.01) {
+                return { class: 'rank-bronze', label: 'SR' };
             } else {
-                return { class: '', label: '通常' };
+                return { class: '', label: 'N' };
             }
         }
 
         function createCardHtml(sword) {
-            const rarity = getRarityInfo(sword.parse);
+            const rarity = getRarityInfo(sword);
             return `
     <div class="gacha-card ${rarity.class}">
       <div class="badge">${rarity.label}</div>
@@ -512,7 +568,6 @@
   `;
         }
 
-        // 実際に集計へカウント処理を行う内部関数
         function addSwordsToStats(swords) {
             swords.forEach(sword => {
                 totalDrawCount++;
@@ -521,11 +576,9 @@
             updateStatsDisplay();
         }
 
-        // 手伝い札を使用して結果を開放し、集計に反映させる関数
         function completeAllCrafting() {
             if (currentCraftedResults.length === 0) return;
 
-            // ここで集計にカウントを追加
             addSwordsToStats(currentCraftedResults);
 
             const resultDiv = document.getElementById('result');
@@ -544,7 +597,6 @@
     `;
             }
 
-            // 解放完了後は未解放配列をクリア
             currentCraftedResults = [];
         }
 
@@ -567,7 +619,6 @@
             }
 
             if (useHelpTag) {
-                // 手伝い札ありの場合：すぐに集計に加算
                 addSwordsToStats(tempSwords);
 
                 if (count === 1) {
@@ -579,7 +630,6 @@
       `;
                 }
             } else {
-                // 手伝い札なしの場合：結果を開放するまで一時保持（まだ集計しない）
                 currentCraftedResults = tempSwords;
 
                 const helpBtnText = count === 1 ? '手伝い札を使用' : '手伝い札を一括使用';
@@ -615,13 +665,16 @@
             const countedSwords = swordDatabase
                 .filter(sword => swordCounts[sword.id] > 0)
                 .sort((a, b) => {
+                    // 999を最優先で表示
+                    if (a.id === 999) return -1;
+                    if (b.id === 999) return 1;
                     if (a.parse !== b.parse) return a.parse - b.parse;
                     return a.id - b.id;
                 });
 
             let listHtml = '';
             countedSwords.forEach(sword => {
-                const rarity = getRarityInfo(sword.parse);
+                const rarity = getRarityInfo(sword);
                 const count = swordCounts[sword.id];
                 listHtml += `
       <div class="history-item ${rarity.class}">
