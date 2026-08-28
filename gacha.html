@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鍛刀シミュレーター (All 700)</title>
+    <!-- Excel読み込み用ライブラリ (SheetJS) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Sans-Serif;
+            text-align: center;
+            background-color: #2b2b36;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #1e1e24;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+        }
+
+        .status-area {
+            font-size: 13px;
+            margin-bottom: 15px;
+            color: #aaa;
+        }
+
+        .resource-box {
+            display: flex;
+            justify-content: space-around;
+            background: #2a2a35;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #ffca28;
+            border: 1px solid #444;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        button.btn-multi {
+            background: linear-gradient(135deg, #e65100, #bf360c);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        button:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #141419;
+            border: 1px solid #333;
+            min-height: 120px;
+        }
+
+        /* グリッドレイアウト */
+        .gacha-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        /* 基本カード (それ以外: 通常) */
+        .gacha-card {
+            background: #252530;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 12px 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ランク1：0.001以下 (極レア / 金枠 + 発光) */
+        .gacha-card.rank-gold {
+            background: linear-gradient(135deg, #3d3215, #1f1807);
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            animation: goldGlow 2s infinite alternate;
+        }
+
+        .gacha-card.rank-gold .badge {
+            background: linear-gradient(135deg, #ffd700, #ffa000);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .gacha-card.rank-gold .sword-name {
+            color: #ffe082;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        /* ランク2：0.005以下 (超レア / 銀枠) */
+        .gacha-card.rank-silver {
+            background: linear-gradient(135deg, #2c3540, #182026);
+            border: 2px solid #b0bec5;
+            box-shadow: 0 0 8px rgba(176, 190, 197, 0.4);
+        }
+
+        .gacha-card.rank-silver .badge {
+            background-color: #78909c;
+            color: #fff;
+        }
+
+        .gacha-card.rank-silver .sword-name {
+            color: #e0e0e0;
+        }
+
+        /* ランク3：0.01未満 (レア / 銅枠・ブロンズ) */
+        .gacha-card.rank-bronze {
+            background: linear-gradient(135deg, #36251b, #1c130e);
+            border: 2px solid #cd7f32;
+            box-shadow: 0 0 6px rgba(205, 127, 50, 0.3);
+        }
+
+        .gacha-card.rank-bronze .badge {
+            background-color: #a16226;
+            color: #fff;
+        }
+
+        .gacha-card.rank-bronze .sword-name {
+            color: #ffcc99;
+        }
+
+        /* 金枠の発光アニメーション */
+        @keyframes goldGlow {
+            0% {
+                box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+            }
+
+            100% {
+                box-shadow: 0 0 18px rgba(255, 215, 0, 0.9);
+            }
+        }
+
+        /* レア度バッジ */
+        .badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background-color: #444;
+            color: #ccc;
+        }
+
+        .sword-id {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .sword-name {
+            font-size: 14px;
+            color: #fff;
+            font-weight: bold;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+        /* 単発表示用 */
+        .single-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .single-container .gacha-card {
+            width: 180px;
+            padding: 20px 10px;
+        }
+
+        .single-container .sword-name {
+            font-size: 20px;
+        }
+
+        .error {
+            color: #ff5252 !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ホームに戻るリンク -->
+    <a href="home.html"
+        style="display: inline-block; margin-bottom: 15px; color: #b7b6b8; text-decoration: none; font-size: 0.9rem; font-weight: bold;">
+        ← ホームに戻る
+    </a>
+
+    <div class="container">
+        <h2>鍛刀シミュレーター (All 700)</h2>
+
+        <div class="status-area" id="status">Excelデータ (touken_mst.xlsx) を読み込んでいます...</div>
+
+        <!-- 資材固定表示 -->
+        <div class="resource-box">
+            <span>木炭: 700</span>
+            <span>玉鋼: 700</span>
+            <span>冷却材: 700</span>
+            <span>砥石: 700</span>
+        </div>
+
+        <div class="button-group">
+            <button id="singleBtn" onclick="craft(1)" disabled>単発鍛刀</button>
+            <button id="multiBtn" class="btn-multi" onclick="craft(10)" disabled>10連鍛刀</button>
+        </div>
+
+        <div id="result">
+            <p style="color:#888;">データを準備中です...</p>
+        </div>
+    </div>
+
+    <script>
+        let swordDatabase = [];
+        const EXCEL_FILE_PATH = 'touken_mst.xlsx';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadExcelAutomatically();
+        });
+
+        async function loadExcelAutomatically() {
+            // 未認証の場合はホーム画面へリダイレクト
+            if (sessionStorage.getItem('isAuthorized') !== 'true') {
+                window.location.href = 'home.html';
+                return;
+            }
+            const statusEl = document.getElementById('status');
+            const resultEl = document.getElementById('result');
+
+            try {
+                const response = await fetch(EXCEL_FILE_PATH);
+                if (!response.ok) {
+                    throw new Error(`ファイルが見つかりません (${response.status} ${response.statusText})`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+                const gachaSheet = workbook.Sheets['gacha'];
+                if (!gachaSheet) throw new Error("シート名 'gacha' が見つかりません。");
+                const probData = XLSX.utils.sheet_to_json(gachaSheet);
+
+                const charSheet = workbook.Sheets['char'];
+                if (!charSheet) throw new Error("シート名 'char' が見つかりません。");
+                const charData = XLSX.utils.sheet_to_json(charSheet);
+
+                const nameMap = {};
+                charData.forEach(row => {
+                    nameMap[row.id] = row.name || row.名前 || row.キャラクター名 || `刀帳No.${row.id}`;
+                });
+
+                swordDatabase = probData.map(row => ({
+                    id: row.id,
+                    parse: parseFloat(row.parse) || 0,
+                    name: nameMap[row.id] || `刀帳No.${row.id}`
+                })).filter(item => item.parse > 0);
+
+                if (swordDatabase.length === 0) {
+                    throw new Error("有効なデータがありません。");
+                }
+
+                statusEl.textContent = `データ読み込み完了（登録数: ${swordDatabase.length}件）`;
+                statusEl.style.color = "#81c784";
+
+                document.getElementById('singleBtn').disabled = false;
+                document.getElementById('multiBtn').disabled = false;
+                resultEl.innerHTML = "<p style='color:#aaa;'>「単発鍛刀」または「10連鍛刀」を押してください。</p>";
+
+            } catch (error) {
+                statusEl.textContent = `エラー: ${error.message}`;
+                statusEl.classList.add('error');
+                resultEl.innerHTML = `<p class="error">データ読み込みに失敗しました。</p>`;
+            }
+        }
+
+        function drawOne() {
+            const totalWeight = swordDatabase.reduce((sum, item) => sum + item.parse, 0);
+            let random = Math.random() * totalWeight;
+
+            for (const sword of swordDatabase) {
+                if (random < sword.parse) {
+                    return sword;
+                }
+                random -= sword.parse;
+            }
+            return swordDatabase[swordDatabase.length - 1];
+        }
+
+        // レア度判定用関数 (4段階に振り分け)
+        function getRarityInfo(parse) {
+            if (parse <= 0.001) {
+                return { class: 'rank-gold', label: 'UR' };
+            } else if (parse <= 0.005) {
+                return { class: 'rank-silver', label: 'SSR' };
+            } else if (parse < 0.01) {
+                return { class: 'rank-bronze', label: 'SR' };
+            } else {
+                return { class: '', label: 'N' };
+            }
+        }
+
+        // カードHTML生成関数
+        function createCardHtml(sword) {
+            const rarity = getRarityInfo(sword.parse);
+            return `
+    <div class="gacha-card ${rarity.class}">
+      <div class="badge">${rarity.label}</div>
+      <div class="sword-id">No.${sword.id}</div>
+      <div class="sword-name">${sword.name}</div>
+    </div>
+  `;
+        }
+
+        function craft(count) {
+            if (swordDatabase.length === 0) return;
+
+            const resultDiv = document.getElementById('result');
+
+            if (count === 1) {
+                const selected = drawOne();
+                resultDiv.innerHTML = `
+      <div class="single-container">
+        ${createCardHtml(selected)}
+      </div>
+    `;
+            } else {
+                let cardsHtml = '';
+                for (let i = 0; i < count; i++) {
+                    const selected = drawOne();
+                    cardsHtml += createCardHtml(selected);
+                }
+
+                resultDiv.innerHTML = `
+      <div style="font-weight:bold; margin-bottom:10px; color:#ffca28;">【10連鍛刀結果】</div>
+      <div class="gacha-grid">
+        ${cardsHtml}
+      </div>
+    `;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
